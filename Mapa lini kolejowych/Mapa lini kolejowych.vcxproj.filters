@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Website">
+      <UniqueIdentifier>{38a5f280-8b14-4bf1-9d62-a5b2355293fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scripts">
+      <UniqueIdentifier>{d02fe339-cce2-4867-8799-302b2735a474}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SQL">
+      <UniqueIdentifier>{a0835b19-c197-498b-b274-ec1d3dd24cf6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Database.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="vcpkg.json" />
+    <None Include="Website\index.html">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\Leaflet.js">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\Styles.css">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Scripts\Overpass - linie kolejowe.ql">
+      <Filter>Scripts</Filter>
+    </None>
+    <None Include="Scripts\Overpass - linie metra.ql">
+      <Filter>Scripts</Filter>
+    </None>
+    <None Include="Wynik.json">
+      <Filter>Scripts</Filter>
+    </None>
+    <None Include="SQL\Input Tables.sql">
+      <Filter>SQL</Filter>
+    </None>
+    <None Include="SQL\Tables.sql">
+      <Filter>SQL</Filter>
+    </None>
+    <None Include="SQL\Queries.sql">
+      <Filter>SQL</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Database.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
