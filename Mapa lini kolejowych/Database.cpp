@@ -47,6 +47,86 @@ void Database::save_to_file(std::filesystem::path database_path)
 	database.backup(database_path.string().c_str(), SQLite::Database::BackupType::Save);
 }
 
+std::string Database::find(std::string_view _query, std::string_view type, unsigned limit)
+{
+	geoJSON_buffer.clear();
+	auto query = fmt::format("%{}%", _query);
+	nlohmann::json founded;
+
+	auto sql_find = [&](SQLite::Statement& q) {
+		q.bind(1, query);
+		q.bind(2, limit);
+
+		while (q.executeStep())
+		{
+			nlohmann::json J;
+			J["id"] = q.getColumn("ID").getInt64();
+			J["name"] = q.getColumn("Name").getText();
+			founded.push_back(J);
+		}
+	};
+
+	if (type == "rail_station")
+	{
+		SQLite::Statement station_finder(database, sql::query::search_station);
+		sql_find(station_finder);
+	}
+	else if (type == "rail_line")
+	{
+		SQLite::Statement line_finder(database, sql::query::search_rail_lines);
+		sql_find(line_finder);
+	}
+	geoJSON_buffer = founded.dump(1);
+	return geoJSON_buffer;
+}
+
+const std::string& Database::getGeoJSON(unsigned ID, std::string_view type)
+{
+	geoJSON_buffer.clear();
+	if (type == "rail_station")
+	{
+		SQLite::Statement station_getter(database, sql::query::get_station);
+		station_getter.bind(1, ID);
+		station_getter.executeStep();
+
+		auto geojson = R"({"type": "Feature", "properties": {}})"_json;
+		geojson["properties"]["id"] = ID;
+		geojson["properties"]["name"] = station_getter.getColumn("Name").getText();
+		geojson["properties"]["type"] = station_getter.getColumn("Type").getText();
+		geojson["geometry"] = nlohmann::json::parse(station_getter.getColumn("GeoJson").getText());
+		geoJSON_buffer = geojson.dump(1);
+	}
+	else if (type == "rail_line")
+	{
+		SQLite::Statement line_getter(database, sql::query::get_rail_line);
+		line_getter.bind(1, ID);
+		line_getter.executeStep();
+
+		auto geojson = R"({"type": "Feature", "properties": {}})"_json;
+		geojson["properties"]["id"] = ID;
+		geojson["properties"]["number"] = line_getter.getColumn("Number").getText();
+		geojson["properties"]["name"] = line_getter.getColumn("Name").getText();
+		geojson["properties"]["network"] = line_getter.getColumn("Network").getText();
+		geojson["properties"]["operator"] = line_getter.getColumn("Operator").getText();
+		geojson["properties"]["boundry"] = nlohmann::json::parse(line_getter.getColumn("GeoJson").getText());
+		auto feature_collection = R"({"type": "FeatureCollection","features": []})"_json;
+		{
+			SQLite::Statement segment_getter(database, sql::query::get_rail_line_segments);
+			segment_getter.bind(1, ID);
+
+			while (segment_getter.executeStep())
+			{
+				auto lines_geojson = R"({"type": "Feature", "properties": {}})"_json;
+				lines_geojson["geometry"] = nlohmann::json::parse(segment_getter.getColumn("GeoJson").getText());
+				feature_collection["features"].push_back(std::move(lines_geojson));
+			}
+		}
+		geojson["properties"]["features"] = feature_collection;
+		geoJSON_buffer = geojson.dump(1);
+	}
+	return geoJSON_buffer;
+}
+
 const std::string& Database::getGeoJSON(std::string_view polygon_string, int zoom)
 {
 	geoJSON_buffer.clear();
@@ -302,14 +382,6 @@ bool Database::create_temporary_database(nlohmann::json& data)
 				inserter.exec();
 				inserter.reset();
 			};
-
-			auto bind_member_exec = [](SQLite::Statement& inserter, nlohmann::json& value)
-			{
-				return;
-				inserter.bind(2, value.dump());
-				inserter.exec();
-				inserter.reset();
-			};
 			//NODES
 			if (object["type"] == "node")
 			{
@@ -357,7 +429,11 @@ bool Database::create_temporary_database(nlohmann::json& data)
 				for (const auto& [index, member] : object["members"].items())
 				{
 					if (member["type"] == "way")
-						bind_member_exec(relations_ways_insert, member["ref"]);
+					{
+						relations_ways_insert.bind(2, member["ref"].dump());
+						relations_ways_insert.exec();
+						relations_ways_insert.reset();
+					}
 				}
 			}
 		}

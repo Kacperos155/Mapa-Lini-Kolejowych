@@ -2,22 +2,25 @@ var map = L.map('map').setView([52.018, 19.137], 6);
 
 var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+}).addTo(map)
 
 var geoJSON = L.geoJSON();
-var speed_map = 1;
+var speed_map = 0;
 
-function setSpeedMap(bool) {
-	if (!speed_map && bool == true) {
+function setSpeedMap() {
+	if (!speed_map) {
 		speed_map = true;
-		map.remove(openStreetMap);
+		openStreetMap.setOpacity(0.05);
 	}
-	else if (speed_map && bool == false) {
+	else if (speed_map) {
 		speed_map = false;
-		openStreetMap.addTo(map);
-    }
+		openStreetMap.setOpacity(1);
+	}
+	geoJSON.setStyle((feature) => {
+		if (feature.geometry.type == 'LineString')
+			return lineStyle(feature)
+	});
 }
-setSpeedMap(0);
 
 function lineStyle(feature) {
 	var disusage = feature.properties.disusage;
@@ -39,23 +42,17 @@ function lineStyle(feature) {
 			return { color: "#bdf94d" };
 		if (between(140, maxspeed, 300))
 			return { color: "#21f24b" };
-		return { color: "#c2c2c2" }
+		return { color: "#ffffff" }
 	}
 	return { color: "#445da7" }
 }
 
 var TrainMarker_Large = L.Icon.extend({
-	options: {
-		iconSize: [30, 30],
-		//popupAnchor: [-3, -76]
-	}
+	options: { iconSize: [30, 30] }
 });
 
 var TrainMarker_Small = L.Icon.extend({
-	options: {
-		iconSize: [20, 20],
-		//popupAnchor: [-3, -76]
-	}
+	options: { iconSize: [20, 20] }
 });
 
 //Icons from freepik.com
@@ -78,7 +75,7 @@ function popUps(feature, layer) {
 		if (feature.properties.line)
 			text += "Linia: <b>" + feature.properties.line + '</b><br/>';
 		if (feature.properties.maxspeed)
-			text += "Predkosc maksymalna na odcinku: <b>" + feature.properties.maxspeed + ' </b>km/h';
+			text += "Prędkość maksymalna na odcinku: <b>" + feature.properties.maxspeed + ' </b>km/h';
 		if (text)
 			layer.bindPopup(text);
 	}
@@ -88,8 +85,8 @@ function popUps(feature, layer) {
 		switch (type) {
 			case 1: text = 'Dworzec'; break;
 			case 2: text = 'Stacja'; break;
-			case 3: text = 'Nieuzywany dworzec'; break;
-			case 4: text = 'Nieuzywana stacja'; break;
+			case 3: text = 'Nieużywany dworzec'; break;
+			case 4: text = 'Nieużywana stacja'; break;
 		}
 		text += ': <b>' + feature.properties.name + '</b><br/>';
 		layer.bindPopup(text);
@@ -122,10 +119,6 @@ var geojsonMarkerOptions = {
 
 function addSegments(segments) {
 	try {
-		var kek = 0;
-		map.eachLayer(() => ++kek);
-		console.log('Segments: ' + kek);
-		var kek = 0;
 		var old_geoJSON = geoJSON;
 		geoJSON = L.geoJSON(segments, {
 			pointToLayer: function (feature, latlng) {
@@ -162,3 +155,22 @@ function getSegments() {
 
 getSegments();
 map.on('moveend', getSegments);
+
+function selectLine(ID) {
+	url = 'http://localhost:2137/get/rail_line/' + ID;
+	fetch(url)
+		.then(response => response.json())
+		.then((result) => {
+			var boundry_polygon = result.properties.boundry;
+			var coords = boundry_polygon.coordinates[0];
+			var c1 = L.latLng(coords[0][1], coords[0][0]);
+			var c2 = L.latLng(coords[2][1], coords[2][0]);
+			map.fitBounds(L.latLngBounds(c1, c2));
+
+			//L.geoJSON(boundry_polygon).addTo(map);
+			L.geoJSON(result.properties.features, {
+				style: { color: "#000000", weight: 8 }
+			}).addTo(map);
+		});
+}
+//selectLine(1711959);
