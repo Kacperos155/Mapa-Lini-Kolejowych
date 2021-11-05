@@ -30,6 +30,9 @@
     <ClCompile Include="Database.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
@@ -45,12 +48,6 @@
     <None Include="Scripts\Overpass - linie kolejowe.ql">
       <Filter>Scripts</Filter>
     </None>
-    <None Include="Scripts\Overpass - linie metra.ql">
-      <Filter>Scripts</Filter>
-    </None>
-    <None Include="Wynik.json">
-      <Filter>Scripts</Filter>
-    </None>
     <None Include="SQL\Input Tables.sql">
       <Filter>SQL</Filter>
     </None>
@@ -60,9 +57,15 @@
     <None Include="SQL\Queries.sql">
       <Filter>SQL</Filter>
     </None>
+    <None Include="Scripts\Overpass - linie kolejowe pomorze.gl">
+      <Filter>Scripts</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
