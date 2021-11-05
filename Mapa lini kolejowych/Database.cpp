@@ -47,7 +47,7 @@ void Database::save_to_file(std::filesystem::path database_path)
 	database.backup(database_path.string().c_str(), SQLite::Database::BackupType::Save);
 }
 
-const std::string& Database::getGeoJSON(std::string_view polygon_string, unsigned zoom)
+const std::string& Database::getGeoJSON(std::string_view polygon_string, int zoom)
 {
 	geoJSON_buffer.clear();
 	auto feature_collection = R"({"type": "FeatureCollection","features": []})"_json;
@@ -57,28 +57,51 @@ const std::string& Database::getGeoJSON(std::string_view polygon_string, unsigne
 	segments_intersects.bind(1, polygon_string.data());
 	while (segments_intersects.executeStep())
 	{
-		auto geojson = R"({"type": "Feature", "properties": {}})"_json;
-		geojson["properties"]["id"] = segments_intersects.getColumn("ID").getInt64();
-		geojson["properties"]["usage"] = segments_intersects.getColumn("Usage").getText();
-		geojson["properties"]["line"] = segments_intersects.getColumn("Line number").getText();
-		geojson["properties"]["maxspeed"] = segments_intersects.getColumn("Max speed").getInt64();
-		geojson["properties"]["electrified"] = segments_intersects.getColumn("Electrified").getInt64();
-		geojson["geometry"] = nlohmann::json::parse(segments_intersects.getColumn("GeoJson").getText());
-		feature_collection["features"].push_back(std::move(geojson));
+		std::string_view usage = segments_intersects.getColumn("Usage").getText();
+		auto max_speed = std::stoi(segments_intersects.getColumn("Max speed").getText());
+		auto disusage = segments_intersects.getColumn("Disusage").getInt64();
+		auto zoom_restriction = 0;
+		if (usage == "main") {
+			zoom_restriction = 0;
+			if (max_speed < 120) zoom_restriction += 5;
+			if (max_speed < 100) zoom_restriction += 1;
+		}
+		else zoom_restriction = 7;
+		if (disusage) zoom_restriction = 8;
+
+		if (zoom - zoom_restriction > 0)
+		{
+			auto geojson = R"({"type": "Feature", "properties": {}})"_json;
+			geojson["properties"]["id"] = segments_intersects.getColumn("ID").getInt64();
+			geojson["properties"]["usage"] = usage;
+			geojson["properties"]["disusage"] = disusage;
+			geojson["properties"]["line"] = segments_intersects.getColumn("Line number").getText();
+			geojson["properties"]["maxspeed"] = max_speed;
+			geojson["properties"]["electrified"] = segments_intersects.getColumn("Electrified").getInt64();
+			geojson["geometry"] = nlohmann::json::parse(segments_intersects.getColumn("GeoJson").getText());
+			feature_collection["features"].push_back(std::move(geojson));
+		}
 	}
 	//STATIONS
-	if (zoom >= 0)
+	if (zoom >= 10)
 	{
 		SQLite::Statement stations_intersects(database, sql::query::stations_in_bound);
 		stations_intersects.bind(1, polygon_string.data());
 		while (stations_intersects.executeStep())
 		{
-			auto geojson = R"({"type": "Feature", "properties": {}})"_json;
-			geojson["properties"]["id"] = stations_intersects.getColumn("ID").getInt64();
-			geojson["properties"]["name"] = stations_intersects.getColumn("Name").getText();
-			geojson["properties"]["type"] = stations_intersects.getColumn("Type").getInt64();
-			geojson["geometry"] = nlohmann::json::parse(stations_intersects.getColumn("GeoJson").getText());
-			feature_collection["features"].push_back(std::move(geojson));
+			auto type = stations_intersects.getColumn("Type").getInt64();
+			auto zoom_restriction = 2;
+			if (type == 1) zoom_restriction = 0;
+			else if (type >= 4) zoom_restriction = 3;
+			if (zoom - zoom_restriction >= 10)
+			{
+				auto geojson = R"({"type": "Feature", "properties": {}})"_json;
+				geojson["properties"]["id"] = stations_intersects.getColumn("ID").getInt64();
+				geojson["properties"]["name"] = stations_intersects.getColumn("Name").getText();
+				geojson["properties"]["type"] = type;
+				geojson["geometry"] = nlohmann::json::parse(stations_intersects.getColumn("GeoJson").getText());
+				feature_collection["features"].push_back(std::move(geojson));
+			}
 		}
 	}
 	geoJSON_buffer = feature_collection.dump(1);
@@ -110,7 +133,7 @@ bool Database::import_rail_stations(nlohmann::json& data)
 	data = data["elements"];
 	SQLite::Transaction transaction(database);
 	SQLite::Statement rail_station_insert(database, sql::rail_station_insert);
-	int i =0;
+	int i = 0;
 	for (const auto& [index, object] : data.items())
 	{
 		++i;
@@ -119,7 +142,7 @@ bool Database::import_rail_stations(nlohmann::json& data)
 		rail_station_insert.bind(":point", fmt::format("POINT({} {})",
 			object["lon"].dump(), object["lat"].dump()));
 		std::string_view name;
-		if(tags.contains("name"))
+		if (tags.contains("name"))
 			name = tags.at("name");
 		rail_station_insert.bind(":name", name.data());
 
@@ -169,6 +192,7 @@ SQLite::Database Database::create_new_database()
 		std::string_view line_number;
 		std::string_view max_speed = "0";
 		std::string_view voltage = "0";
+		bool disusage = false;
 		if (tags.contains("usage"))
 			usage = tags.at("usage");
 		if (tags.contains("ref"))
@@ -178,7 +202,7 @@ SQLite::Database Database::create_new_database()
 		if (tags.contains("electrified"))
 		{
 			auto electrified = tags["electrified"].dump();
-			if (electrified != "no")
+			if (electrified != "no" && !electrified.empty())
 			{
 				if (tags.contains("voltage"))
 					voltage = tags.at("voltage");
@@ -186,11 +210,14 @@ SQLite::Database Database::create_new_database()
 					voltage = "1";
 			}
 		}
-		
+		if (tags.contains("disused:railway") || tags.contains("abandoned:railway") || tags.at("railway") == "disused")
+			disusage = true;
+
 		segments_insert.bind(":id", id);
 		segments_insert.bind(":boundry", boundry);
 		segments_insert.bind(":line", points);
 		segments_insert.bind(":usage", usage.data());
+		segments_insert.bind(":disusage", disusage);
 		segments_insert.bind(":line_number", line_number.data());
 		segments_insert.bind(":max_speed", max_speed.data());
 		segments_insert.bind(":electrified", voltage.data());
@@ -301,7 +328,7 @@ bool Database::create_temporary_database(nlohmann::json& data)
 				way_insert.bind(":id", object["id"].dump());
 				if (object.contains("tags"))
 					way_insert.bind(":tags", object["tags"].dump());
-				
+
 				points = "LINESTRING(";
 				for (const auto& [key, value] : object["nodes"].items())
 				{

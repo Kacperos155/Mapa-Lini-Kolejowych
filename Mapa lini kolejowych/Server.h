@@ -14,5 +14,6 @@ private:
 	crow::SimpleApp app;
 
 	void init_routing();
+	crow::response& sendData_in_bounds(crow::response& res, double min_lon, double min_lat, double max_lon, double max_lat, int zoom = 20);
 };
 

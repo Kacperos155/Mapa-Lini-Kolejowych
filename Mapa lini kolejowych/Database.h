@@ -16,7 +16,7 @@ public:
 	bool import_from_file(std::filesystem::path rail_lines, std::filesystem::path rail_stations);
 	void load_from_file(std::filesystem::path database_path);
 	void save_to_file(std::filesystem::path database_path);
-	const std::string& getGeoJSON(std::string_view polygon_string, unsigned zoom = 1);
+	const std::string& getGeoJSON(std::string_view polygon_string, int zoom = 20);
 private:
 	std::string timestamp;
 	std::string geoJSON_buffer;
