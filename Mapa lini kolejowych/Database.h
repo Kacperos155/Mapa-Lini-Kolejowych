@@ -11,14 +11,19 @@ class Database
 {
 public:
 	Database();
-	bool import_from_string(std::string_view data);
-	bool import_from_file(std::filesystem::path file);
-	const std::string& getSegments(std::string_view polygon_string);
+	Database(std::filesystem::path database_path);
+	bool import_from_string(std::string_view rail_lines, std::string_view rail_stations);
+	bool import_from_file(std::filesystem::path rail_lines, std::filesystem::path rail_stations);
+	void load_from_file(std::filesystem::path database_path);
+	void save_to_file(std::filesystem::path database_path);
+	const std::string& getGeoJSON(std::string_view polygon_string, unsigned zoom = 1);
 private:
-	std::string segments_buffer;
-	SQLite::Database database{ ":memory:", SQLite::OPEN_CREATE | SQLite::OPEN_READWRITE };
+	std::string timestamp;
+	std::string geoJSON_buffer;
+	SQLite::Database database{ ":memory:" };
 
-	bool importing(nlohmann::json& data);
+	bool import_rail_lines(nlohmann::json& data);
+	bool import_rail_stations(nlohmann::json& data);
 	SQLite::Database create_new_database();
 	bool create_temporary_database(nlohmann::json& data);
 };

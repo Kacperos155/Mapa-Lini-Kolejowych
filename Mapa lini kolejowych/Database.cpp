@@ -6,55 +6,90 @@
 
 Database::Database()
 {
-	//database.loadExtension("mod_spatialite.dll", nullptr);
-	//std::cout << database.execAndGet("SELECT spatialite_version();").getText() << '\n';
-	//std::cout << database.execAndGet("SELECT geos_version();").getText() << '\n';
-	//std::cout << '\n';
-	//std::cout << database.execAndGet(R"(SELECT AsGeoJSON(GeomFromText('linestring(15 30, 16 31, 17 32, 18 33, 19 34)', 4326));)").getText() << '\n';
-	////std::cout << database.execAndGet(R"(SELECT AsGeoJSON(GeomFromText('POLYGON((52.1320569 20.9288146, 52.2911704 20.9288146, 52.2911704 21.0649742, 52.1320569 21.0649742))', 4326));)").getText() << '\n';
+	;
 }
 
-bool Database::import_from_string(std::string_view data)
+Database::Database(std::filesystem::path database_path)
 {
-	nlohmann::json J(data);
-	return importing(J);
+	load_from_file(database_path);
 }
 
-bool Database::import_from_file(std::filesystem::path file)
+bool Database::import_from_string(std::string_view rail_lines, std::string_view rail_stations)
 {
-	std::ifstream f(file);
-	nlohmann::json J;
-	f >> J;
-	return importing(J);
+	nlohmann::json L(rail_lines);
+	nlohmann::json S(rail_stations);
+	if (!import_rail_lines(L))
+		return false;
+	return import_rail_stations(S);
 }
 
-const std::string& Database::getSegments(std::string_view polygon_string)
+bool Database::import_from_file(std::filesystem::path rail_lines, std::filesystem::path rail_stations)
 {
-	segments_buffer.clear();
-	auto segments = R"({"type": "FeatureCollection","features": []})"_json;
+	std::ifstream fL(rail_lines);
+	std::ifstream fS(rail_stations);
+	nlohmann::json L;
+	nlohmann::json S;
+	fL >> L;
+	if (!import_rail_lines(L))
+		return false;
+	fS >> S;
+	return import_rail_stations(S);
+}
 
+void Database::load_from_file(std::filesystem::path database_path)
+{
+	database = SQLite::Database(database_path.string(), SQLite::OPEN_READONLY);
+	database.loadExtension("mod_spatialite.dll", nullptr);
+}
+
+void Database::save_to_file(std::filesystem::path database_path)
+{
+	database.backup(database_path.string().c_str(), SQLite::Database::BackupType::Save);
+}
+
+const std::string& Database::getGeoJSON(std::string_view polygon_string, unsigned zoom)
+{
+	geoJSON_buffer.clear();
+	auto feature_collection = R"({"type": "FeatureCollection","features": []})"_json;
+
+	//SEGMENTS
 	SQLite::Statement segments_intersects(database, sql::query::segments_in_bound);
 	segments_intersects.bind(1, polygon_string.data());
 	while (segments_intersects.executeStep())
 	{
 		auto geojson = R"({"type": "Feature", "properties": {}})"_json;
 		geojson["properties"]["id"] = segments_intersects.getColumn("ID").getInt64();
+		geojson["properties"]["usage"] = segments_intersects.getColumn("Usage").getText();
+		geojson["properties"]["line"] = segments_intersects.getColumn("Line number").getText();
+		geojson["properties"]["maxspeed"] = segments_intersects.getColumn("Max speed").getInt64();
+		geojson["properties"]["electrified"] = segments_intersects.getColumn("Electrified").getInt64();
 		geojson["geometry"] = nlohmann::json::parse(segments_intersects.getColumn("GeoJson").getText());
-		segments["features"].push_back(std::move(geojson));
+		feature_collection["features"].push_back(std::move(geojson));
 	}
-	segments_buffer = segments.dump(1);
-	return segments_buffer;
+	//STATIONS
+	if (zoom >= 0)
+	{
+		SQLite::Statement stations_intersects(database, sql::query::stations_in_bound);
+		stations_intersects.bind(1, polygon_string.data());
+		while (stations_intersects.executeStep())
+		{
+			auto geojson = R"({"type": "Feature", "properties": {}})"_json;
+			geojson["properties"]["id"] = stations_intersects.getColumn("ID").getInt64();
+			geojson["properties"]["name"] = stations_intersects.getColumn("Name").getText();
+			geojson["properties"]["type"] = stations_intersects.getColumn("Type").getInt64();
+			geojson["geometry"] = nlohmann::json::parse(stations_intersects.getColumn("GeoJson").getText());
+			feature_collection["features"].push_back(std::move(geojson));
+		}
+	}
+	geoJSON_buffer = feature_collection.dump(1);
+	return geoJSON_buffer;
 }
 
-bool Database::importing(nlohmann::json& data)
+bool Database::import_rail_lines(nlohmann::json& data)
 {
 	if (!create_temporary_database(data))
 		return false;
-	std::cout << "Imported JSON as Database \n";
-	fmt::print("Nodes: {}\n", database.execAndGet("SELECT COUNT(*) FROM \"Nodes\"").getInt64());
-	fmt::print("Ways: {}\n", database.execAndGet("SELECT COUNT(*) FROM \"Ways\"").getInt64());
-	fmt::print("Relations: {}\n", database.execAndGet("SELECT COUNT(*) FROM \"Relations\"").getInt64());
-	//database.backup("kek_input.db", SQLite::Database::BackupType::Save);
+	std::cout << "Imported JSON as Rail Lines Database \n";
 	try
 	{
 		database = create_new_database();
@@ -64,8 +99,47 @@ bool Database::importing(nlohmann::json& data)
 		std::cerr << e.what();
 		return false;
 	}
-	std::cout << "Database created \n";
-	//database.backup("kek.db", SQLite::Database::BackupType::Save);
+	fmt::print("Segments: {}\n", database.execAndGet("SELECT COUNT(*) FROM \"Segments\"").getInt64());
+	fmt::print("Rail lines: {}\n", database.execAndGet("SELECT COUNT(*) FROM \"Rail lines\"").getInt64());
+	return true;
+}
+
+bool Database::import_rail_stations(nlohmann::json& data)
+{
+	//RAIL STATIONS
+	data = data["elements"];
+	SQLite::Transaction transaction(database);
+	SQLite::Statement rail_station_insert(database, sql::rail_station_insert);
+	int i =0;
+	for (const auto& [index, object] : data.items())
+	{
+		++i;
+		auto& tags = object.at("tags");
+		rail_station_insert.bind(":id", object.at("id").dump());
+		rail_station_insert.bind(":point", fmt::format("POINT({} {})",
+			object["lon"].dump(), object["lat"].dump()));
+		std::string_view name;
+		if(tags.contains("name"))
+			name = tags.at("name");
+		rail_station_insert.bind(":name", name.data());
+
+		unsigned type = 0;
+		if (tags["railway"] == "station")
+			type = 1;
+		else if (tags["railway"] == "halt")
+			type = 2;
+		else if (tags["disused:railway"] == "station")
+			type = 3;
+		else if (tags["disused:railway"] == "halt")
+			type = 4;
+
+		rail_station_insert.bind(":type", type);
+		rail_station_insert.exec();
+		rail_station_insert.reset();
+	}
+	transaction.commit();
+	fmt::print("Rail stations: {}\n", database.execAndGet("SELECT COUNT(*) FROM \"Rail stations\"").getInt64());
+	std::cout << "Rail Lines Database is now created \n";
 	return true;
 }
 
@@ -82,18 +156,89 @@ SQLite::Database Database::create_new_database()
 	SQLite::Statement rail_lines_insert(new_database, sql::rail_line_insert);
 	SQLite::Statement rail_lines_segments_insert(new_database, sql::rail_line_segment_insert);
 
+	//SEGMENTS
 	auto ways = SQLite::Statement(database, R"(SELECT * FROM "Ways";)");
 	while (ways.executeStep())
 	{
 		auto id = ways.getColumn("ID").getInt64();
 		auto boundry = ways.getColumn("Boundry").getText();
 		auto points = ways.getColumn("Points").getText();
+		auto tags = nlohmann::json::parse(ways.getColumn("Tags").getText());
+
+		std::string_view usage;
+		std::string_view line_number;
+		std::string_view max_speed = "0";
+		std::string_view voltage = "0";
+		if (tags.contains("usage"))
+			usage = tags.at("usage");
+		if (tags.contains("ref"))
+			line_number = tags.at("ref");
+		if (tags.contains("maxspeed"))
+			max_speed = tags.at("maxspeed");
+		if (tags.contains("electrified"))
+		{
+			auto electrified = tags["electrified"].dump();
+			if (electrified != "no")
+			{
+				if (tags.contains("voltage"))
+					voltage = tags.at("voltage");
+				else
+					voltage = "1";
+			}
+		}
+		
 		segments_insert.bind(":id", id);
 		segments_insert.bind(":boundry", boundry);
 		segments_insert.bind(":line", points);
+		segments_insert.bind(":usage", usage.data());
+		segments_insert.bind(":line_number", line_number.data());
+		segments_insert.bind(":max_speed", max_speed.data());
+		segments_insert.bind(":electrified", voltage.data());
 
 		segments_insert.exec();
 		segments_insert.reset();
+	}
+
+	//RAIL LINES
+	auto relations = SQLite::Statement(database, R"(SELECT * FROM "Relations";)");
+	while (relations.executeStep())
+	{
+		auto id = relations.getColumn("ID").getInt64();
+		auto boundry = relations.getColumn("Boundry").getText();
+		auto tags = nlohmann::json::parse(relations.getColumn("Tags").getText());
+
+		std::string_view number;
+		std::string_view name;
+		std::string_view network;
+		std::string_view rail_operator;
+		if (tags.contains("ref"))
+			number = tags.at("ref");
+		if (tags.contains("name"))
+			name = tags.at("name");
+		if (tags.contains("network"))
+			network = tags.at("network");
+		if (tags.contains("operator"))
+			rail_operator = tags.at("operator");
+
+		rail_lines_insert.bind(":id", id);
+		rail_lines_insert.bind(":boundry", boundry);
+		rail_lines_insert.bind(":number", number.data());
+		rail_lines_insert.bind(":name", name.data());
+		rail_lines_insert.bind(":network", network.data());
+		rail_lines_insert.bind(":operator", rail_operator.data());
+
+		rail_lines_insert.exec();
+		rail_lines_insert.reset();
+	}
+	//RAIL LINES <-> SEGMENTS
+	auto link = SQLite::Statement(database, R"(SELECT * FROM "Relations - Ways";)");
+	while (link.executeStep())
+	{
+		rail_lines_segments_insert.bind(1, link.getColumn("Relation_ID").getInt64());
+		rail_lines_segments_insert.bind(2, link.getColumn("Way_ID").getInt64());
+
+		rail_lines_segments_insert.exec();
+		rail_lines_segments_insert.reset();
 	}
 
 	transaction.commit();
@@ -102,7 +247,8 @@ SQLite::Database Database::create_new_database()
 
 bool Database::create_temporary_database(nlohmann::json& data)
 {
-	const auto timestamp = data["osm3s"]["timestamp_osm_base"].get<std::string>();
+	database = SQLite::Database(":memory:", SQLite::OPEN_CREATE | SQLite::OPEN_READWRITE);
+	timestamp = data["osm3s"]["timestamp_osm_base"].get<std::string>();
 	data = data["elements"];
 
 	database.exec(sql::input_tabels);
@@ -110,7 +256,6 @@ bool Database::create_temporary_database(nlohmann::json& data)
 	SQLite::Statement node_insert(database, sql::node_insert);
 	SQLite::Statement way_insert(database, sql::way_insert);
 	SQLite::Statement relation_insert(database, sql::relation_insert);
-	SQLite::Statement relations_nodes_insert(database, sql::relation_node_insert);
 	SQLite::Statement relations_ways_insert(database, sql::relation_way_insert);
 
 	for (const auto& [index, object] : data.items())
@@ -133,22 +278,23 @@ bool Database::create_temporary_database(nlohmann::json& data)
 
 			auto bind_member_exec = [](SQLite::Statement& inserter, nlohmann::json& value)
 			{
+				return;
 				inserter.bind(2, value.dump());
 				inserter.exec();
 				inserter.reset();
 			};
-
+			//NODES
 			if (object["type"] == "node")
 			{
 				node_insert.bind(":id", object["id"].dump());
 				node_insert.bind(":point", fmt::format("{} {}",
-					//object["lat"].dump(), object["lon"].dump()));
 					object["lon"].dump(), object["lat"].dump()));
 				if (object.contains("tags"))
 					way_insert.bind(":tags", object["tags"].dump());
 				node_insert.exec();
 				node_insert.reset();
 			}
+			//WAYS
 			else if (object["type"] == "way")
 			{
 				auto id = object["id"].dump();
@@ -170,6 +316,7 @@ bool Database::create_temporary_database(nlohmann::json& data)
 				way_insert.bind(":points", points);
 				bind_bounds_exec(way_insert, object);
 			}
+			//RELATIONS
 			else if (object["type"] == "relation")
 			{
 				auto id = object["id"].dump();
@@ -180,17 +327,10 @@ bool Database::create_temporary_database(nlohmann::json& data)
 				bind_bounds_exec(relation_insert, object);
 
 				relations_ways_insert.bind(1, id);
-				relations_nodes_insert.bind(1, id);
 				for (const auto& [index, member] : object["members"].items())
 				{
-					if (member["type"] == "node")
-					{
-						bind_member_exec(relations_nodes_insert, member["ref"]);
-					}
-					else if (member["type"] == "way")
-					{
+					if (member["type"] == "way")
 						bind_member_exec(relations_ways_insert, member["ref"]);
-					}
 				}
 			}
 		}

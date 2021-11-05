@@ -16,11 +16,11 @@
     <Filter Include="Website">
       <UniqueIdentifier>{38a5f280-8b14-4bf1-9d62-a5b2355293fe}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scripts">
-      <UniqueIdentifier>{d02fe339-cce2-4867-8799-302b2735a474}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SQL">
       <UniqueIdentifier>{a0835b19-c197-498b-b274-ec1d3dd24cf6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overpass Data">
+      <UniqueIdentifier>{d02fe339-cce2-4867-8799-302b2735a474}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -45,9 +45,6 @@
     <None Include="Website\Styles.css">
       <Filter>Website</Filter>
     </None>
-    <None Include="Scripts\Overpass - linie kolejowe.ql">
-      <Filter>Scripts</Filter>
-    </None>
     <None Include="SQL\Input Tables.sql">
       <Filter>SQL</Filter>
     </None>
@@ -57,8 +54,23 @@
     <None Include="SQL\Queries.sql">
       <Filter>SQL</Filter>
     </None>
-    <None Include="Scripts\Overpass - linie kolejowe pomorze.gl">
-      <Filter>Scripts</Filter>
+    <None Include="Overpass data\Linie kolejowe - Pomorze.json">
+      <Filter>Overpass Data</Filter>
+    </None>
+    <None Include="Overpass data\Linie kolejowe.json">
+      <Filter>Overpass Data</Filter>
+    </None>
+    <None Include="Overpass data\Overpass - linie kolejowe pomorze.gl">
+      <Filter>Overpass Data</Filter>
+    </None>
+    <None Include="Overpass data\Overpass - linie kolejowe.ql">
+      <Filter>Overpass Data</Filter>
+    </None>
+    <None Include="Overpass data\Overpass - stacje kolejowe.ql">
+      <Filter>Overpass Data</Filter>
+    </None>
+    <None Include="Overpass data\Stacje Kolejowe.json">
+      <Filter>Overpass Data</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
