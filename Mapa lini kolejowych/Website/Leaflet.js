@@ -1,3 +1,4 @@
+var main_url = 'http://localhost:2137/';
 var map = L.map('map').setView([52.018, 19.137], 6);
 
 var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -5,12 +6,13 @@ var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.
 }).addTo(map)
 
 var geoJSON = L.geoJSON();
+var selection = L.geoJSON();
 var speed_map = 0;
 
 function setSpeedMap() {
 	if (!speed_map) {
 		speed_map = true;
-		openStreetMap.setOpacity(0.05);
+		openStreetMap.setOpacity(0.25);
 	}
 	else if (speed_map) {
 		speed_map = false;
@@ -57,25 +59,25 @@ var TrainMarker_Small = L.Icon.extend({
 
 //Icons from freepik.com
 var station_icon = new TrainMarker_Large({
-	iconUrl: 'train.png'
+	iconUrl: 'Icons/train.png'
 })
 var disused_station_icon = new TrainMarker_Large({
-	iconUrl: 'train_old.png'
+	iconUrl: 'Icons/train_old.png'
 })
 var halt_icon = new TrainMarker_Small({
-	iconUrl: 'train_small.png'
+	iconUrl: 'Icons/train_small.png'
 })
 var disused_halt_icon = new TrainMarker_Small({
-	iconUrl: 'train_old.png'
+	iconUrl: 'Icons/train_old.png'
 })
 
 function popUps(feature, layer) {
 	if (feature.geometry.type == 'LineString') {
 		var text = "";
 		if (feature.properties.line)
-			text += "Linia: <b>" + feature.properties.line + '</b><br/>';
+			text += "Linia: <strong>" + feature.properties.line + '</strong><br>';
 		if (feature.properties.maxspeed)
-			text += "Prędkość maksymalna na odcinku: <b>" + feature.properties.maxspeed + ' </b>km/h';
+			text += "Prędkość maksymalna na odcinku: <strong>" + feature.properties.maxspeed + ' </strong>km/h';
 		if (text)
 			layer.bindPopup(text);
 	}
@@ -88,7 +90,7 @@ function popUps(feature, layer) {
 			case 3: text = 'Nieużywany dworzec'; break;
 			case 4: text = 'Nieużywana stacja'; break;
 		}
-		text += ': <b>' + feature.properties.name + '</b><br/>';
+		text += ': <strong>' + feature.properties.name + '<strong><br>';
 		layer.bindPopup(text);
 	}
 	if (feature.properties && feature.properties.popupContent) {
@@ -140,7 +142,7 @@ function addSegments(segments) {
 function getSegments() {
 	var bounds = map.getBounds();
 
-	var url = 'http://localhost:2137/bounds/';
+	var url = main_url + 'bounds/';
 	url += bounds.getSouth() + '/';
 	url += bounds.getWest() + '/';
 	url += bounds.getNorth() + '/';
@@ -155,9 +157,35 @@ function getSegments() {
 
 getSegments();
 map.on('moveend', getSegments);
+var selection_to_remove = false;
+map.on('mouseout', () => {
+	if(selection_to_remove) {
+		selection.remove();
+		selection_to_remove = false;
+	}
+}	);
+
+function select(ID, type) {
+	if(type == 'rail_station')
+		selectStation(ID);
+	else if(type == 'rail_line')
+		selectLine(ID);
+}
+
+function selectStation(ID) {
+	url = main_url + 'get/station/' + ID;
+	fetch(url)
+		.then(response => response.json())
+		.then((result) => {
+			var coords = result.geometry.coordinates;
+			var c = L.latLng(coords[1], coords[0]);
+			map.setZoom(14);
+			map.flyTo(c);
+		});
+}
 
 function selectLine(ID) {
-	url = 'http://localhost:2137/get/rail_line/' + ID;
+	url = main_url + 'get/rail_line/' + ID;
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
@@ -167,10 +195,62 @@ function selectLine(ID) {
 			var c2 = L.latLng(coords[2][1], coords[2][0]);
 			map.fitBounds(L.latLngBounds(c1, c2));
 
-			//L.geoJSON(boundry_polygon).addTo(map);
-			L.geoJSON(result.properties.features, {
-				style: { color: "#000000", weight: 8 }
-			}).addTo(map);
+			selection.remove();
+			selection = L.geoJSON(result.properties.features, {
+				style: { color: "#000000", weight: 15 }
+			});
+			selection.addTo(map);
+			selection_to_remove = true;
 		});
 }
 //selectLine(1711959);
+
+const type_radio_buttons = document.querySelectorAll('input[name="searchType"]');
+const orginal_rt = document.getElementById('SearchResult_JSON').innerHTML;
+
+var search_limit = 25;
+function Search() {
+	let type;
+	for (const rb of type_radio_buttons) {
+		if (rb.checked) {
+			type = rb.value;
+			break;
+		}
+	}
+	const searchText = document.getElementById('SearchText');
+	if(!searchText.value)
+		return;
+	url = main_url + 'find/' + searchText.value + '/' + type;
+	if(search_limit != 5)
+		url += '/' + search_limit;
+
+	fetch(url)
+		.then(response => response.json())
+		.then((result) => {
+			let table = document.getElementById('SearchResult');
+				table.style.display = "block";
+			let html = document.getElementById('SearchResult_JSON');
+			let rt = "";
+			if(result) {
+				for (const obj of result) {
+					rt += '<tr class="result_table_row">';
+					rt += '<th class="result_table"><button class="result_ID" onclick="select(';
+					rt += obj["id"] + ', ' + "'" + type + "'" + ')">\n' + obj["id"] + '</button></th>';
+					rt += '<th class="result_table">' + obj["name"] + '</th>';
+					rt += '</tr>';
+				}
+			}
+			else {
+				rt = "Brak wyników";
+			}
+			html.innerHTML = orginal_rt + rt;
+	});
+}
+
+var search_box = document.getElementById("SearchText");
+search_box.addEventListener("keyup", function(event) {
+	if (event.keyCode === 13) {
+		event.preventDefault();
+		Search();
+	}
+});

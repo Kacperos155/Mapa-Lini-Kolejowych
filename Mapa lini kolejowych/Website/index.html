@@ -1,7 +1,10 @@
-<HTML>
-<HEAD>
+<!DOCTYPE html>
+<html lang = "pl-PL">
+<head>
 	<META NAME="GENERATOR" Content="Microsoft Visual Studio">
-	<TITLE></TITLE>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<title>Mapa lini kolejowych w Polsce</title>
+	<link rel="icon" type="image/x-icon" href="Icons/train_modern.png">
 	<link rel="stylesheet" href="styles.css">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
 		integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
@@ -9,12 +12,41 @@
 	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
 		integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
 		crossorigin=""></script>
-</HEAD>
-<BODY>
+</head>
+<body>
+	<header><h1>Mapa lini kolejowych w Polsce</h1></header>
 
-	<div id="map"></div>
-	<button id="speed_map_toogle" onclick="setSpeedMap()">Tryb ograniczeń prędkości</button>
-	<script src="Leaflet.js"  charset="utf-8">></script>
-
-</BODY>
-</HTML>
+	<div id="main_container">
+	<div id="map_panel">
+		<button id="speed_map_toogle" onclick="setSpeedMap()">Tryb ograniczeń prędkości</button>
+		<div id="map"></div>
+	</div>
+	<div id="content">
+			<input type="radio" id="searchType_stations" name="searchType" value="rail_station" checked>
+			<label for="searchType_stations">Stacje Kolejowe</label>
+			<input type="radio" id="searchType_lines" name="searchType" value="rail_line">
+			<label for="searchType_lines">Linie Kolejowe</label>
+			<div id="SearchBar">
+				<input type="text" id="SearchText" autofocus>
+				<button id="SearchButton" onclick="Search()">Szukaj</button>
+			</div>
+			<div id="SearchResult">
+				<table class="result_table" id="SearchResult_JSON">
+					<colgroup>
+						<col span="1" style="width: 50%;">
+						<col span="1" style="width: 100%;">
+					</colgroup>
+					<tr class="result_table header">
+						<th class="result_table header">ID</th>
+						<th class="result_table header">Nazwa</th>
+					</tr>
+				</table>
+			</div>
+		<pre id="log">
+		</pre>
+	</div>
+	</div>
+	<script src="Leaflet.js"  charset="utf-8"></script>
+	<footer>Made by Kacper Zielinski, 2021</footer>
+</body>
+</html>
