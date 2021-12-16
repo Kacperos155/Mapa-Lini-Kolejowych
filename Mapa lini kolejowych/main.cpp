@@ -1,20 +1,22 @@
-#define CROW_MAIN
-#include <crow.h>
-#include "Database.h"
+#pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "crypt32.lib")
+#pragma comment(lib, "Rpcrt4.lib")
+
+#include "resources.h"
 #include "Server.h"
 
 int main()
 {
-	Database DB;
+	auto& DB = resources::getDatabase();
 	const std::filesystem::path database_path("Overpass data/Dane kolejowe.db");
 	if (std::filesystem::exists(database_path))
 		DB.load_from_file(database_path);
 	else {
 		const std::filesystem::path rail_lines("Overpass data/Linie kolejowe.json");
-		const std::filesystem::path rail_station("Overpass data/Stacje kolejowe.json");
-		if (std::filesystem::exists(rail_lines) && std::filesystem::exists(rail_station))
+		const std::filesystem::path rail_stations("Overpass data/Stacje kolejowe.json");
+		if (std::filesystem::exists(rail_lines) && std::filesystem::exists(rail_stations))
 		{
-			if (DB.import_from_file(rail_lines, rail_station))
+			if (DB.import_from_file(rail_lines, rail_stations))
 				DB.save_to_file(database_path);
 			else
 			{
@@ -24,11 +26,11 @@ int main()
 		}
 		else
 		{
-			std::cerr << fmt::format("\nYou must provide {} AND {} files.\n", rail_lines.string(), rail_station.string());
+			std::cerr << fmt::format("\nYou must provide {} AND {} files.\n", rail_lines.string(), rail_stations.string());
 			return 404;
 		}
 	}
-	Server S(DB);
+	Server S;
 	S.run();
 	return 0;
 }

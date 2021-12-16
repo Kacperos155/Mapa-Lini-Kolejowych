@@ -172,9 +172,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Controllers\Bounds.cpp" />
+    <ClCompile Include="Controllers\findElement.cpp" />
+    <ClCompile Include="Controllers\getElement.cpp" />
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Server.cpp" />
+    <ClCompile Include="resources.cpp" />
+    <ClCompile Include="Server.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Overpass data\Linie kolejowe - Pomorze.json" />
@@ -192,8 +199,15 @@
     <None Include="Website\Styles.css" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Controllers\Bounds.h" />
+    <ClInclude Include="Controllers\findElement.h" />
+    <ClInclude Include="Controllers\getElement.h" />
     <ClInclude Include="Database.h" />
-    <ClInclude Include="Server.h" />
+    <ClInclude Include="resources.h" />
+    <ClInclude Include="Server.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

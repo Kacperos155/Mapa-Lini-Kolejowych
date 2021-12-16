@@ -1,4 +1,4 @@
-var main_url = 'http://localhost:2137/';
+var main_url = 'http://localhost/';
 var map = L.map('map').setView([52.018, 19.137], 6);
 
 var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -173,7 +173,7 @@ function select(ID, type) {
 }
 
 function selectStation(ID) {
-	url = main_url + 'get/station/' + ID;
+	url = main_url + 'getElement/station/' + ID;
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
@@ -185,7 +185,7 @@ function selectStation(ID) {
 }
 
 function selectLine(ID) {
-	url = main_url + 'get/rail_line/' + ID;
+	url = main_url + 'getElement/rail_line/' + ID;
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
@@ -203,7 +203,6 @@ function selectLine(ID) {
 			selection_to_remove = true;
 		});
 }
-//selectLine(1711959);
 
 const type_radio_buttons = document.querySelectorAll('input[name="searchType"]');
 const orginal_rt = document.getElementById('SearchResult_JSON').innerHTML;
@@ -220,10 +219,11 @@ function Search() {
 	const searchText = document.getElementById('SearchText');
 	if(!searchText.value)
 		return;
-	url = main_url + 'find/' + searchText.value + '/' + type;
+	url = main_url + 'findElement/' + searchText.value + '/' + type;
 	if(search_limit != 5)
 		url += '/' + search_limit;
 
+	console.log(url);
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
