@@ -46,6 +46,9 @@
       <Filter>Controllers</Filter>
     </ClCompile>
     <ClCompile Include="Controllers\findElement.cpp">
+      <Filter>Controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="database_creation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -69,22 +72,13 @@
     <None Include="SQL\Queries.sql">
       <Filter>SQL</Filter>
     </None>
-    <None Include="Overpass data\Linie kolejowe - Pomorze.json">
+    <None Include="Overpass data\Overpass query.ql">
       <Filter>Overpass Data</Filter>
     </None>
-    <None Include="Overpass data\Linie kolejowe.json">
+    <None Include="Overpass data\OSM Rail lines data.json">
       <Filter>Overpass Data</Filter>
     </None>
-    <None Include="Overpass data\Overpass - linie kolejowe pomorze.gl">
-      <Filter>Overpass Data</Filter>
-    </None>
-    <None Include="Overpass data\Overpass - linie kolejowe.ql">
-      <Filter>Overpass Data</Filter>
-    </None>
-    <None Include="Overpass data\Overpass - stacje kolejowe.ql">
-      <Filter>Overpass Data</Filter>
-    </None>
-    <None Include="Overpass data\Stacje Kolejowe.json">
+    <None Include="Overpass data\OSM Rail lines data - pomorskie.json">
       <Filter>Overpass Data</Filter>
     </None>
   </ItemGroup>

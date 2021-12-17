@@ -1,15 +1,10 @@
 #include "Database.h"
 
-#include "SQL\Tables.sql"
-#include "SQL\Queries.sql"
-#include "SQL\Input Tables.sql"
+#include "SQL/Tables.sql"
+#include "SQL/Queries.sql"
+#include "SQL/Input Tables.sql"
 
-Database::Database()
-{
-	;
-}
-
-Database::Database(std::filesystem::path database_path)
+Database::Database(const std::filesystem::path& database_path)
 {
 	load_from_file(database_path);
 }
@@ -23,7 +18,7 @@ bool Database::import_from_string(std::string_view rail_lines, std::string_view 
 	return import_rail_stations(S);
 }
 
-bool Database::import_from_file(std::filesystem::path rail_lines, std::filesystem::path rail_stations)
+bool Database::import_from_file(const std::filesystem::path& rail_lines, const std::filesystem::path& rail_stations)
 {
 	std::ifstream fL(rail_lines);
 	std::ifstream fS(rail_stations);
@@ -36,13 +31,13 @@ bool Database::import_from_file(std::filesystem::path rail_lines, std::filesyste
 	return import_rail_stations(S);
 }
 
-void Database::load_from_file(std::filesystem::path database_path)
+void Database::load_from_file(const std::filesystem::path& database_path)
 {
 	database = SQLite::Database(database_path.string(), SQLite::OPEN_READONLY);
 	database.loadExtension("mod_spatialite.dll", nullptr);
 }
 
-void Database::save_to_file(std::filesystem::path database_path)
+void Database::save_to_file(const std::filesystem::path& database_path)
 {
 	database.backup(database_path.string().c_str(), SQLite::Database::BackupType::Save);
 }
@@ -197,7 +192,7 @@ bool Database::import_rail_lines(nlohmann::json& data)
 	{
 		database = create_new_database();
 	}
-	catch (std::exception& e)
+	catch (const std::exception& e)
 	{
 		std::cerr << e.what();
 		return false;

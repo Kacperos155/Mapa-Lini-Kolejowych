@@ -142,9 +142,10 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,9 +161,10 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -176,6 +178,7 @@
     <ClCompile Include="Controllers\findElement.cpp" />
     <ClCompile Include="Controllers\getElement.cpp" />
     <ClCompile Include="Database.cpp" />
+    <ClCompile Include="database_creation.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="resources.cpp" />
     <ClCompile Include="Server.cpp">
@@ -184,12 +187,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Overpass data\Linie kolejowe - Pomorze.json" />
-    <None Include="Overpass data\Linie kolejowe.json" />
-    <None Include="Overpass data\Overpass - linie kolejowe pomorze.gl" />
-    <None Include="Overpass data\Overpass - linie kolejowe.ql" />
-    <None Include="Overpass data\Overpass - stacje kolejowe.ql" />
-    <None Include="Overpass data\Stacje Kolejowe.json" />
+    <None Include="Overpass data\OSM Rail lines data - pomorskie.json" />
+    <None Include="Overpass data\OSM Rail lines data.json" />
+    <None Include="Overpass data\Overpass query.ql" />
     <None Include="SQL\Input Tables.sql" />
     <None Include="SQL\Queries.sql" />
     <None Include="SQL\Tables.sql" />

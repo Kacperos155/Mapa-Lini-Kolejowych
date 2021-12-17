@@ -10,12 +10,12 @@
 class Database
 {
 public:
-	Database();
-	Database(std::filesystem::path database_path);
+	Database() = default;
+	explicit Database(const std::filesystem::path& database_path);
 	bool import_from_string(std::string_view rail_lines, std::string_view rail_stations);
-	bool import_from_file(std::filesystem::path rail_lines, std::filesystem::path rail_stations);
-	void load_from_file(std::filesystem::path database_path);
-	void save_to_file(std::filesystem::path database_path);
+	bool import_from_file(const std::filesystem::path& rail_lines, const std::filesystem::path& rail_stations);
+	void load_from_file(const std::filesystem::path& database_path);
+	void save_to_file(const std::filesystem::path& database_path);
 	std::string find(std::string_view query, std::string_view type = "rail_station", unsigned limit = 5);
 	const std::string& getGeoJSON(unsigned ID, std::string_view type = "rail_station");
 	const std::string& getGeoJSON(std::string_view polygon_string, int zoom = 20);
