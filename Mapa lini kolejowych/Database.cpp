@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "GeoJSON_conversion.h"
 #include "SQL/Tables.sql"
 #include "SQL/Queries.sql"
 
@@ -48,145 +49,89 @@ void Database::saveToFile(const std::filesystem::path& database_path)
 	database.backup(database_path.string().c_str(), SQLite::Database::BackupType::Save);
 }
 
-std::string Database::find(std::string_view _query, std::string_view type, unsigned limit)
+const std::string& Database::find(std::string_view query, std::string_view type, unsigned limit)
 {
-	geoJSON_buffer.clear();
-	auto query = fmt::format("%{}%", _query);
-	nlohmann::json founded;
+	static std::string buffer{};
+	auto find_query = sql::query::search_station;
+	auto location_function = GeoJSON::getRailStation;
 
-	auto sql_find = [&](SQLite::Statement& q) {
-		q.bind(1, query);
-		q.bind(2, limit);
-
-		while (q.executeStep())
-		{
-			nlohmann::json J;
-			J["id"] = q.getColumn("ID").getInt64();
-			J["name"] = q.getColumn("Name").getText();
-			founded.push_back(J);
-		}
-	};
-
-	if (type == "rail_station")
+	if (type == "rail_line")
 	{
-		SQLite::Statement station_finder(database, sql::query::search_station);
-		sql_find(station_finder);
+		find_query = sql::query::search_rail_line;
+		location_function = GeoJSON::getRailLine;
 	}
-	else if (type == "rail_line")
+	else if (type != "rail_station")
 	{
-		SQLite::Statement line_finder(database, sql::query::search_rail_lines);
-		sql_find(line_finder);
+		throw "Wrong type";
 	}
-	geoJSON_buffer = founded.dump(1);
-	return geoJSON_buffer;
+
+	nlohmann::json j;
+	auto search = SQLite::Statement(database, find_query);
+	search.bind(1, fmt::format("%{}%", query));
+	search.bind(2, limit);
+
+	while (search.executeStep())
+	{
+		nlohmann::json found;
+		found["id"] = search.getColumn("ID").getText();
+		found["name"] = search.getColumn("Name").getText();
+		j.push_back(found);
+	}
+
+	buffer = j.dump(1);
+	return buffer;
 }
 
-const std::string& Database::getGeoJSON(unsigned ID, std::string_view type)
+const std::string& Database::getGeoJSON(std::string_view ID, std::string_view type)
 {
-	geoJSON_buffer.clear();
-	if (type == "rail_station")
+	static std::string buffer{};
+	auto location_function = GeoJSON::getRailStationLocation;
+
+	if (type == "rail_line")
 	{
-		SQLite::Statement station_getter(database, sql::query::get_station);
-		station_getter.bind(1, ID);
-		station_getter.executeStep();
-
-		auto geojson = R"({"type": "Feature", "properties": {}})"_json;
-		geojson["properties"]["id"] = ID;
-		geojson["properties"]["name"] = station_getter.getColumn("Name").getText();
-		geojson["properties"]["type"] = station_getter.getColumn("Type").getText();
-		geojson["geometry"] = nlohmann::json::parse(station_getter.getColumn("GeoJson").getText());
-		geoJSON_buffer = geojson.dump(1);
+		location_function = GeoJSON::getRailLineLocation;
 	}
-	else if (type == "rail_line")
+	else if (type != "rail_station")
 	{
-		SQLite::Statement line_getter(database, sql::query::get_rail_line);
-		line_getter.bind(1, ID);
-		line_getter.executeStep();
-
-		auto geojson = R"({"type": "Feature", "properties": {}})"_json;
-		geojson["properties"]["id"] = ID;
-		geojson["properties"]["number"] = line_getter.getColumn("Number").getText();
-		geojson["properties"]["name"] = line_getter.getColumn("Name").getText();
-		geojson["properties"]["network"] = line_getter.getColumn("Network").getText();
-		geojson["properties"]["operator"] = line_getter.getColumn("Operator").getText();
-		geojson["properties"]["boundry"] = nlohmann::json::parse(line_getter.getColumn("GeoJson").getText());
-		auto feature_collection = R"({"type": "FeatureCollection","features": []})"_json;
-		{
-			SQLite::Statement segment_getter(database, sql::query::get_rail_line_segments);
-			segment_getter.bind(1, ID);
-
-			while (segment_getter.executeStep())
-			{
-				auto lines_geojson = R"({"type": "Feature", "properties": {}})"_json;
-				lines_geojson["geometry"] = nlohmann::json::parse(segment_getter.getColumn("GeoJson").getText());
-				feature_collection["features"].push_back(std::move(lines_geojson));
-			}
-		}
-		geojson["properties"]["features"] = feature_collection;
-		geoJSON_buffer = geojson.dump(1);
+		throw "Wrong type";
 	}
-	return geoJSON_buffer;
+
+	buffer = location_function(database, ID).dump(1);
+	return buffer;
 }
 
-const std::string& Database::getGeoJSON(std::string_view polygon_string, int zoom)
+const std::string& Database::getGeoJSON(double min_lon, double min_lat, double max_lon, double max_lat, int zoom)
 {
-	geoJSON_buffer.clear();
-	auto feature_collection = R"({"type": "FeatureCollection","features": []})"_json;
+	static std::string buffer{};
+	auto features_collection = R"({"type": "FeatureCollection","features": []})"_json;
+	auto polygon = fmt::format("POLYGON(({0} {1}, {2} {1}, {2} {3}, {0} {3}))",
+		min_lon, min_lat, max_lon, max_lat);
 
-	//SEGMENTS
-	SQLite::Statement segments_intersects(database, sql::query::segments_in_bound);
-	segments_intersects.bind(1, polygon_string.data());
-	while (segments_intersects.executeStep())
+	//Only lines - cache
+	if (zoom < 8)
 	{
-		std::string_view usage = segments_intersects.getColumn("Usage").getText();
-		auto max_speed = std::stoi(segments_intersects.getColumn("Max speed").getText());
-		auto disusage = segments_intersects.getColumn("Disusage").getInt64();
-		auto zoom_restriction = 0;
-		if (usage == "main") {
-			zoom_restriction = 0;
-			if (max_speed < 120) zoom_restriction += 5;
-			if (max_speed < 100) zoom_restriction += 1;
-		}
-		else zoom_restriction = 7;
-		if (disusage) zoom_restriction = 8;
+		return GeoJSON::allRailLines(database);
+	}
+	//Only lines - checking boundry
+	else if (zoom < 10)
+	{
+		GeoJSON::boundingRailLines(database, features_collection, polygon);
+	}
+	//Lines + main rail stations
+	else if (zoom == 10)
+	{
+		GeoJSON::boundingRailLines(database, features_collection, polygon);
+		GeoJSON::boundingMainRailStations(database, features_collection, polygon);
+	}
+	//Lines + rail stations
+	else if (zoom >= 11)
+	{
+		GeoJSON::boundingRailLines(database, features_collection, polygon);
+		GeoJSON::boundingRailStations(database, features_collection, polygon);
+	}
 
-		if (zoom - zoom_restriction > 0)
-		{
-			auto geojson = R"({"type": "Feature", "properties": {}})"_json;
-			geojson["properties"]["id"] = segments_intersects.getColumn("ID").getInt64();
-			geojson["properties"]["usage"] = usage;
-			geojson["properties"]["disusage"] = disusage;
-			geojson["properties"]["line"] = segments_intersects.getColumn("Line number").getText();
-			geojson["properties"]["maxspeed"] = max_speed;
-			geojson["properties"]["electrified"] = segments_intersects.getColumn("Electrified").getInt64();
-			geojson["geometry"] = nlohmann::json::parse(segments_intersects.getColumn("GeoJson").getText());
-			feature_collection["features"].push_back(std::move(geojson));
-		}
-	}
-	//STATIONS
-	if (zoom >= 10)
-	{
-		SQLite::Statement stations_intersects(database, sql::query::stations_in_bound);
-		stations_intersects.bind(1, polygon_string.data());
-		while (stations_intersects.executeStep())
-		{
-			auto type = stations_intersects.getColumn("Type").getInt64();
-			auto zoom_restriction = 2;
-			if (type == 1) zoom_restriction = 0;
-			else if (type >= 4) zoom_restriction = 3;
-			if (zoom - zoom_restriction >= 10)
-			{
-				auto geojson = R"({"type": "Feature", "properties": {}})"_json;
-				geojson["properties"]["id"] = stations_intersects.getColumn("ID").getInt64();
-				geojson["properties"]["name"] = stations_intersects.getColumn("Name").getText();
-				geojson["properties"]["type"] = type;
-				geojson["geometry"] = nlohmann::json::parse(stations_intersects.getColumn("GeoJson").getText());
-				feature_collection["features"].push_back(std::move(geojson));
-			}
-		}
-	}
-	geoJSON_buffer = feature_collection.dump(1);
-	return geoJSON_buffer;
+	buffer = features_collection.dump(1);
+	return buffer;
 }
 
 bool Database::importData(const nlohmann::json& json_data)
@@ -346,7 +291,7 @@ bool Database::importData_RailLine(const nlohmann::json& json_data)
 		line += ")";
 		insert_statement.bind(":line", line);
 
-		auto boundry_statement = fmt::format("SELECT AsText(Envelope(MultiLineStringFromText(\'{}\', 4326)));", line);
+		auto boundry_statement = fmt::format("SELECT AsText(Envelope(GeomFromText(\'{}\', 4326)));", line);
 		insert_statement.bind(":boundry", database.execAndGet(boundry_statement).getText());
 
 		insert_statement.exec();

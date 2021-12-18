@@ -173,7 +173,7 @@ function select(ID, type) {
 }
 
 function selectStation(ID) {
-	url = main_url + 'getElement/station/' + ID;
+	url = main_url + 'getElement/rail_station/' + ID;
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
@@ -189,10 +189,9 @@ function selectLine(ID) {
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
-			var boundry_polygon = result.properties.boundry;
-			var coords = boundry_polygon.coordinates[0];
-			var c1 = L.latLng(coords[0][1], coords[0][0]);
-			var c2 = L.latLng(coords[2][1], coords[2][0]);
+			let coords = result.geometry.coordinates[0];
+			let c1 = L.latLng(coords[0][1], coords[0][0]);
+			let c2 = L.latLng(coords[2][1], coords[2][0]);
 			map.fitBounds(L.latLngBounds(c1, c2));
 
 			selection.remove();
@@ -219,7 +218,7 @@ function Search() {
 	const searchText = document.getElementById('SearchText');
 	if(!searchText.value)
 		return;
-	url = main_url + 'findElement/' + searchText.value + '/' + type;
+	url = main_url + 'findElement/' + encodeURI(searchText.value) + '/' + type;
 	if(search_limit != 5)
 		url += '/' + search_limit;
 

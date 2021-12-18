@@ -51,6 +51,9 @@
     <ClCompile Include="database_creation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeoJSON_conversion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
@@ -78,6 +81,9 @@
     <None Include="Overpass data\OSM Rail lines data - pomorskie.json">
       <Filter>Overpass Data</Filter>
     </None>
+    <None Include="SQL\GeoJSON.sql">
+      <Filter>SQL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">
@@ -97,6 +103,9 @@
     </ClInclude>
     <ClInclude Include="Controllers\findElement.h">
       <Filter>Controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoJSON_conversion.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

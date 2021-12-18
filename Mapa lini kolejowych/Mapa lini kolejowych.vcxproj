@@ -179,6 +179,7 @@
     <ClCompile Include="Controllers\getElement.cpp" />
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="database_creation.cpp" />
+    <ClCompile Include="GeoJSON_conversion.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="resources.cpp" />
     <ClCompile Include="Server.cpp">
@@ -190,6 +191,7 @@
     <None Include="Overpass data\OSM Rail lines data - pomorskie.json" />
     <None Include="Overpass data\OSM Rail lines data.json" />
     <None Include="Overpass data\Overpass query.ql" />
+    <None Include="SQL\GeoJSON.sql" />
     <None Include="SQL\Queries.sql" />
     <None Include="SQL\Tables.sql" />
     <None Include="vcpkg.json" />
@@ -202,6 +204,7 @@
     <ClInclude Include="Controllers\findElement.h" />
     <ClInclude Include="Controllers\getElement.h" />
     <ClInclude Include="Database.h" />
+    <ClInclude Include="GeoJSON_conversion.h" />
     <ClInclude Include="resources.h" />
     <ClInclude Include="Server.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
