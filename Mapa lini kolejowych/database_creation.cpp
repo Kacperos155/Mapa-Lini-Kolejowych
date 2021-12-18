@@ -14,6 +14,7 @@
 
 const std::filesystem::path database_path{ "Rail lines database.db" };
 const std::filesystem::path OSM_data_path{ "Overpass Data/OSM Rail lines data.json" };
+const std::filesystem::path OSM_data_test_path{ "Overpass Data/OSM Rail lines data - pomorskie.json" };
 
 bool databaseFromFiles(std::string_view app_directory)
 {
@@ -26,12 +27,12 @@ bool databaseFromFiles(std::string_view app_directory)
 	if (std::filesystem::exists(json_data))
 	{
 		auto& DB = resources::getDatabase();
-		/*if (DB.import_from_file(rail_lines, rail_stations))
+		if (DB.importFromFile(json_data))
 		{
-			DB.save_to_file(database_path);
-			fmt::print("Database succesfuly created from provided files. \n");
+			DB.saveToFile(database_path);
+			fmt::print("Database succesfuly created from provided file. \n");
 			return true;
-		}*/
+		}
 	}
 	fmt::print("Database could not be created from provided files! \n");
 	return false;
@@ -39,7 +40,7 @@ bool databaseFromFiles(std::string_view app_directory)
 
 bool databaseFromOSMserver(std::string_view country_tag)
 {
-	if (country_tag.size() != 2 && country_tag != "PL-22")
+	if (country_tag.size() != 2 && country_tag != "test")
 	{
 		fmt::print(fmt::fg(fmt::color::red), "ERROR: {} is an invalid country tag\n", country_tag);
 		return false;
@@ -53,8 +54,10 @@ bool databaseFromOSMserver(std::string_view country_tag)
 	fmt::print("\nPlease be patient. Downloading data could take from 5 to 30 minutes. \n");
 
 	auto query = std::string(overpass_query);
-	if (country_tag == "PL-22")
+	bool tests = false;
+	if (country_tag == "test")
 	{
+		tests = true;
 		query = overpass_query_pomorskie;
 	}
 	else if (country_tag != "PL")
@@ -79,43 +82,65 @@ bool databaseFromOSMserver(std::string_view country_tag)
 	fmt::print(fmt::fg(fmt::color::green), "Successful download from Overpass API after {}s\n",
 		std::chrono::duration_cast<std::chrono::seconds>(download_duration).count());
 
-	std::ofstream output_file(OSM_data_path);
-	output_file << response.text;
-	return true;
+	if (!tests)
+	{
+		std::ofstream output_file(OSM_data_path);
+		output_file << response.text;
+	}
+	else
+	{
+		std::ofstream output_file(OSM_data_test_path);
+		output_file << response.text;
+	}
+
+	auto& DB = resources::getDatabase();
+	if (DB.importFromString(response.text))
+	{
+		DB.saveToFile(database_path);
+		fmt::print("Database succesfuly created from OpenStreetMap server. \n");
+		return true;
+	}
+
+	return false;
 }
 
 bool resources::checkDatabaseExistence(std::string_view app_directory)
 {
 	if (std::filesystem::exists(database_path))
-		resources::getDatabase().load_from_file(database_path);
-	else if (false)//std::filesystem::exists(OSM_data_path))
+		resources::getDatabase().loadFromFile(database_path);
+	else if (std::filesystem::exists(OSM_data_path))
 	{
-		;//TODO resources::getDatabase().import_from_file()
+		return resources::getDatabase().importFromFile(OSM_data_path);
 	}
 	else
 	{
-		if (tinyfd_messageBox("No database file",
-			"There is no database file in application directory. \n" \
-			"Do you have a JSON file with rail data? \n\n",
-			"yesno", "warning", 0))
-		{
-			return databaseFromFiles(app_directory);
-		}
-
-		if (tinyfd_messageBox("Downloading data from OpenStreetMap server",
-			"Do you want to try to download data from OpenStreetMap server? \n\n" \
-			"This can take a very long time.",
-			"yesno", "warning", 0))
-		{
-			const char* country_tag = tinyfd_inputBox("Country tag", "Please provide a country name using 2 characters (ISO3166-1:alpha2 standard)", "PL");
-			if (country_tag == nullptr)
-				return false;
-
-			return databaseFromOSMserver(country_tag);
-		}
-
-		fmt::print("Database don't exist and no data was provided to create database. \n");
-		return false;
+		return databaseRebuild(app_directory);
 	}
 	return true;
+}
+
+bool resources::databaseRebuild(std::string_view app_directory)
+{
+	if (tinyfd_messageBox("No database file",
+		"There is no database file in application directory. \n" \
+		"Do you have a JSON file with rail data? \n\n",
+		"yesno", "warning", 0))
+	{
+		return databaseFromFiles(app_directory);
+	}
+
+	if (tinyfd_messageBox("Downloading data from OpenStreetMap server",
+		"Do you want to try to download data from OpenStreetMap server? \n\n" \
+		"This can take a very long time.",
+		"yesno", "warning", 0))
+	{
+		const char* country_tag = tinyfd_inputBox("Country tag", "Please provide a country name using 2 characters (ISO3166-1:alpha2 standard)", "PL");
+		if (country_tag == nullptr)
+			return false;
+
+		return databaseFromOSMserver(country_tag);
+	}
+
+	fmt::print("Database don't exist and no data was provided to create database. \n");
+	return false;
 }

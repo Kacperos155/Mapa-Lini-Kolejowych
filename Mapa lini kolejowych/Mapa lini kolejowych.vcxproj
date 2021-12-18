@@ -190,7 +190,6 @@
     <None Include="Overpass data\OSM Rail lines data - pomorskie.json" />
     <None Include="Overpass data\OSM Rail lines data.json" />
     <None Include="Overpass data\Overpass query.ql" />
-    <None Include="SQL\Input Tables.sql" />
     <None Include="SQL\Queries.sql" />
     <None Include="SQL\Tables.sql" />
     <None Include="vcpkg.json" />

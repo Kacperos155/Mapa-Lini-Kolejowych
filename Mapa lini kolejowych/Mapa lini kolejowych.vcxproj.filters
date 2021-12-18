@@ -63,9 +63,6 @@
     <None Include="Website\Styles.css">
       <Filter>Website</Filter>
     </None>
-    <None Include="SQL\Input Tables.sql">
-      <Filter>SQL</Filter>
-    </None>
     <None Include="SQL\Tables.sql">
       <Filter>SQL</Filter>
     </None>

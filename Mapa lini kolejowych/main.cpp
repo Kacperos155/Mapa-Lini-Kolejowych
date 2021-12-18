@@ -16,9 +16,16 @@ int main(int argc, char** argv)
 	{
 		tinyfd_forceConsole = 1;
 	}
-
-	if (!resources::checkDatabaseExistence(arguments[0]))
-		return 1;
+	if (std::ranges::find(arguments, "--rebuild-database") != arguments.end())
+	{
+		if (!resources::databaseRebuild(arguments[0]))
+			return 1;
+	}
+	else
+	{
+		if (!resources::checkDatabaseExistence(arguments[0]))
+			return 1;
+	}
 	
 	Server S;
 	//S.run();
