@@ -1,0 +1,93 @@
+body {
+	background-color: #cccccc;
+}
+
+header {
+	text-align: center;
+}
+
+footer {
+	float: bottom;
+	text-align: right;
+	margin-top: 5 px;
+	margin-right: 5 px;
+}
+
+button {
+	cursor: pointer;
+}
+
+#main_container {
+	display: flex;
+	border-top: 1px solid;
+}
+
+#map_panel
+{
+	float: left;
+	width: 820px;
+	margin: 2px 5px;
+}
+
+#map {
+	align: center;
+    width: 800px;
+    height: 800px;
+	border: 1px solid;
+}
+
+#speed_map_toogle {
+	align: center;
+	width: 802px;
+	margin-down: 1px;
+}
+
+#content {
+	flex: 100%;
+	margin: 5px;
+	width: auto;
+	height: 100%;
+	background-color: #dddddd;
+}
+
+#SearchBar {
+	border: 1px solid;
+	margin: 3px;
+}
+
+#SearchText {
+	width: 85%;
+}
+
+#SearchButton {
+	float: right;
+	width: 13%;
+}
+
+#SearchResult {
+	margin: 3px;
+	width: 100%;
+	color: #39473d;
+	display: none;
+}
+
+.result_table {
+	margin: 5px;
+	flex: 90%
+	align: center;
+}
+
+.result_table_row:nth-child(odd) {
+	background-color: #9fd185;
+}
+
+.header {
+	color: #ffffff;
+	background-color: #23432c;
+}
+
+.result_ID {
+	width: 90%;
+	background-color: #aece9c;
+	border-color: #23432c;
+}

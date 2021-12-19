@@ -63,9 +63,6 @@
     <None Include="Website\Leaflet.js">
       <Filter>Website</Filter>
     </None>
-    <None Include="Website\Styles.css">
-      <Filter>Website</Filter>
-    </None>
     <None Include="SQL\Tables.sql">
       <Filter>SQL</Filter>
     </None>
@@ -83,6 +80,15 @@
     </None>
     <None Include="SQL\GeoJSON.sql">
       <Filter>SQL</Filter>
+    </None>
+    <None Include="Website\green.css">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\grey.css">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\Cookies.js">
+      <Filter>Website</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
