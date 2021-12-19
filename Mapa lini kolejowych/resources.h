@@ -10,4 +10,3 @@ namespace resources
 	bool checkDatabaseExistence(std::string_view app_directory = "");
 	bool databaseRebuild(std::string_view app_directory = "");
 }
-

@@ -1,4 +1,5 @@
 #include "resources.h"
+#include "utilities.h"
 #include "Server.h"
 #include <vector>
 #include <string_view>
@@ -15,6 +16,10 @@ int main(int argc, char** argv)
 	if (std::ranges::find(arguments, "--force-console") != arguments.end())
 	{
 		tinyfd_forceConsole = 1;
+	}
+	if (std::ranges::find(arguments, "--translate") != arguments.end())
+	{
+		utilities::translate("Website/");
 	}
 	if (std::ranges::find(arguments, "--rebuild-database") != arguments.end())
 	{

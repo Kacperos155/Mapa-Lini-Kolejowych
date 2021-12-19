@@ -13,28 +13,28 @@
             crossorigin=""></script>
 </head>
 <body>
-    <header><h1>!_title_!</h1></header>
+    <header><h1>Mapa lini kolejowych w Polsce</h1></header>
 
     <div id="main_container">
         <div id="map_panel">
-            <button id="speed_map_toggle" onclick="setSpeedMap()">!_speed_map_toogle_!</button>
+            <button id="speed_map_toggle" onclick="setSpeedMap()">Toggle speed map</button>
             <div id="map"></div>
         </div>
         <div id="content">
             <script src="Cookies.js" charset="utf-8"></script>
-            <button onclick="changeStyle('green')">!_green_style_!</button>
-            <button onclick="changeStyle('grey')">!_grey_style_!</button>
+            <button onclick="changeStyle('green')">Green Style</button>
+            <button onclick="changeStyle('grey')">Grey Style</button>
             <br>
             <button onclick="changeLanguage('en')">English</button>
             <button onclick="changeLanguage('pl')">Polski</button>
             <br>
             <input type="radio" id="searchType_stations" name="searchType" value="rail_station" checked>
-            <label for="searchType_stations">!_rail_stations_!</label>
+            <label for="searchType_stations">Rail Stations</label>
             <input type="radio" id="searchType_lines" name="searchType" value="rail_line">
-            <label for="searchType_lines">!_rail_lines_!</label>
+            <label for="searchType_lines">Rail Lines</label>
             <div id="SearchBar">
                 <input type="text" id="SearchText" autofocus>
-                <button id="SearchButton" onclick="Search()">!_search_!</button>
+                <button id="SearchButton" onclick="Search()">Search</button>
             </div>
             <div id="SearchResult">
                 <table class="result_table" id="SearchResult_JSON">

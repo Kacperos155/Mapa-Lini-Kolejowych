@@ -1,0 +1,15 @@
+{
+ "languages": [
+  {
+   "name": "English",
+   "tag": "en"
+  },
+  {
+   "name": "Polski",
+   "tag": "pl"
+  }
+ ],
+ "websites": [
+  "index.html"
+ ]
+}
