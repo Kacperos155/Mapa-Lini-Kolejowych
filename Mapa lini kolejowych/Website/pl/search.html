@@ -1,0 +1,33 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<title>Interaktywna Mapa Lini Kolejowych w Polsce</title>
+	<link rel="icon" type="image/x-icon" href="/Icons/train_modern.png">
+	<link rel="stylesheet" href="/search.css">
+	<link rel="stylesheet" href="/getStyle" id="theme">
+</head>
+<body>
+	<input type="radio" id="searchType_stations" name="searchType" value="rail_station" checked>
+	<label for="searchType_stations">Stacje</label>
+	<input type="radio" id="searchType_lines" name="searchType" value="rail_line">
+	<label for="searchType_lines">Linie kolejowe</label>
+	<div id="SearchBar">
+		<input type="text" id="SearchText" autofocus>
+		<button id="SearchButton" onclick="Search()">Szukaj</button>
+	</div>
+	<div id="SearchResult">
+		<table class="result_table" id="SearchResultTable">
+			<colgroup>
+				<col span="1" style="flex: 1;">
+				<col span="1" style="flex: 2;">
+			</colgroup>
+			<tr class="result_table header">
+				<th class="result_table header">ID</th>
+				<th class="result_table header">Nazwa</th>
+			</tr>
+		</table>
+	</div>
+	<pre id="no_result">Brak wyników</pre>
+	<script src="/search.js" charset="utf-8"></script>
+</body>
+</html>

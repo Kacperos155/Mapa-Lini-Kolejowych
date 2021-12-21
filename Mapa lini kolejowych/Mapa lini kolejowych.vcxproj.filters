@@ -93,6 +93,24 @@
     <None Include="Website\Cookies.js">
       <Filter>Website</Filter>
     </None>
+    <None Include="Website\map.html">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\search.html">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\search.js">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\index.css">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\index.js">
+      <Filter>Website</Filter>
+    </None>
+    <None Include="Website\search.css">
+      <Filter>Website</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">

@@ -1,9 +1,5 @@
 {
- "green_style": "",
- "grey_style": "",
- "rail_lines": "",
- "rail_stations": "",
- "search": "",
- "speed_map_toogle": "",
- "title": ""
+ "green_style": "Zielony styl",
+ "grey_style": "Szary styl",
+ "title": "Interaktywna Mapa Lini Kolejowych w Polsce"
 }

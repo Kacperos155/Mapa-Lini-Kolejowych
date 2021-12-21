@@ -1,58 +1,36 @@
 <!DOCTYPE html>
 <html lang="pl-PL">
 <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-    <title>Mapa lini kolejowych w Polsce</title>
-    <link rel="icon" type="image/x-icon" href="Icons/train_modern.png">
-    <link id="main_style" rel="stylesheet" href="getStyle">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-          integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-          crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-            crossorigin=""></script>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<title>!_title_!</title>
+	<link rel="icon" type="image/x-icon" href="/Icons/train_modern.png">
+	<link rel="stylesheet" href="/index.css">
+	<link rel="stylesheet" href="/getStyle" id="theme">
+	<script src="Cookies.js" charset="utf-8"></script>
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+			integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+			crossorigin=""></script>
 </head>
-<body>
-    <header><h1>!_title_!</h1></header>
+<body id="main">
+	<header>
+		<div class="languages">
+			<button onclick="changeStyle('green')">!_green_style_!</button>
+			<button onclick="changeStyle('grey')">!_grey_style_!</button>
+		</div>
+		<h1 id="title">!_title_!</h1>
+		<div class="styles">
+			<button onclick="changeLanguage('en')">English</button>
+			<button onclick="changeLanguage('pl')">Polski</button>
+		</div>
+	</header>
 
-    <div id="main_container">
-        <div id="map_panel">
-            <button id="speed_map_toggle" onclick="setSpeedMap()">!_speed_map_toogle_!</button>
-            <div id="map"></div>
-        </div>
-        <div id="content">
-            <script src="Cookies.js" charset="utf-8"></script>
-            <button onclick="changeStyle('green')">!_green_style_!</button>
-            <button onclick="changeStyle('grey')">!_grey_style_!</button>
-            <br>
-            <button onclick="changeLanguage('en')">English</button>
-            <button onclick="changeLanguage('pl')">Polski</button>
-            <br>
-            <input type="radio" id="searchType_stations" name="searchType" value="rail_station" checked>
-            <label for="searchType_stations">!_rail_stations_!</label>
-            <input type="radio" id="searchType_lines" name="searchType" value="rail_line">
-            <label for="searchType_lines">!_rail_lines_!</label>
-            <div id="SearchBar">
-                <input type="text" id="SearchText" autofocus>
-                <button id="SearchButton" onclick="Search()">!_search_!</button>
-            </div>
-            <div id="SearchResult">
-                <table class="result_table" id="SearchResult_JSON">
-                    <colgroup>
-                        <col span="1" style="width: 50%;">
-                        <col span="1" style="width: 100%;">
-                    </colgroup>
-                    <tr class="result_table header">
-                        <th class="result_table header">ID</th>
-                        <th class="result_table header">Nazwa</th>
-                    </tr>
-                </table>
-            </div>
-            <pre id="log">
-		</pre>
-        </div>
-    </div>
-    <script src="Leaflet.js" charset="utf-8"></script>
-    <footer>Made by Kacper Zielinski, 2021</footer>
+	<div id="main_container">
+		<iframe id="map_frame" src="getTranslation/map.html" title="Leaflet"></iframe>
+		<iframe id="content" src="getTranslation/search.html" title="Leaflet"></iframe>
+	</div>
+	<footer>
+		Made by Kacper Zielinski, 2021
+	</footer>
+	<script src="/index.js" charset="utf-8"></script>
 </body>
 </html>

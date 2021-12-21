@@ -110,7 +110,12 @@ bool resources::checkDatabaseExistence(std::string_view app_directory)
 		resources::getDatabase().loadFromFile(database_path);
 	else if (std::filesystem::exists(OSM_data_path))
 	{
-		return resources::getDatabase().importFromFile(OSM_data_path);
+		if (resources::getDatabase().importFromFile(OSM_data_path))
+		{
+			resources::getDatabase().saveToFile(database_path);
+			fmt::print("Database succesfuly created from provided file. \n");
+			return true;
+		}
 	}
 	else
 	{

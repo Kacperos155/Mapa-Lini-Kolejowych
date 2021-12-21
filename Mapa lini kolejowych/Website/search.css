@@ -1,0 +1,49 @@
+#SearchBar {
+	border: 1px solid;
+	margin: 3px;
+	display: flex;
+}
+
+#SearchText {
+	flex: auto;
+}
+
+#SearchButton {
+	flex: 0.25;
+}
+
+#SearchResult {
+	margin: 3px;
+	width: 100%;
+	color: #39473d;
+	display: none;
+}
+
+.result_table {
+	margin: 5px;
+	flex: 90%;
+}
+
+.result_table_row:nth-child(odd) {
+	background-color: #9fd185;
+}
+
+.result_table_row:hover {
+	background-color: #30dd1c;
+}
+
+.header {
+	color: #ffffff;
+	background-color: #23432c;
+}
+
+.result_ID {
+	width: 90%;
+	background-color: #aece9c;
+	border-color: #23432c;
+}
+
+#no_result {
+	font-size: 32px;
+	display: none;
+}

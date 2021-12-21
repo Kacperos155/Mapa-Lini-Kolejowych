@@ -199,8 +199,14 @@
     <None Include="Website\Cookies.js" />
     <None Include="Website\green.css" />
     <None Include="Website\grey.css" />
+    <None Include="Website\index.css" />
     <None Include="Website\index.html" />
+    <None Include="Website\index.js" />
     <None Include="Website\Leaflet.js" />
+    <None Include="Website\map.html" />
+    <None Include="Website\search.css" />
+    <None Include="Website\search.html" />
+    <None Include="Website\search.js" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Controllers\Bounds.h" />

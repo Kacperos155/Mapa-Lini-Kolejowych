@@ -32,7 +32,6 @@ int main(int argc, char** argv)
 			return 1;
 	}
 	
-	fmt::print("Starting server... \n");
 	Server S;
 	S.run();
 	return 0;

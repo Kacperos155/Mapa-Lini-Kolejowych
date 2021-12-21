@@ -10,6 +10,9 @@
   }
  ],
  "websites": [
-  "index.html"
+  "index.html",
+  "map.html",
+  "search.html",
+  "map_popups.js"
  ]
 }
