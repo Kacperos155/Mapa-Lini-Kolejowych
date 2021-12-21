@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="pl-PL">
 <head>
 	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 	<title>Leaflet</title>
@@ -11,6 +12,10 @@
 			crossorigin="">
 	</script>
 	<style>
+		html {
+			height: 100%;
+		}
+		
 		body {
 			height: 100%;
 			margin: auto;
@@ -37,7 +42,7 @@
 		<button id="speed_map_toggle" onclick="setSpeedMap()">Tryb ograniczeń prędkości</button>
 	</div>
 	<div id="map"></div>
-	<script src="/getTranslation/map_popups.js" charset="utf-8"></script>
-	<script src="/Leaflet.js" charset="utf-8"></script>
+	<script src="/getTranslation/map_popups.js"></script>
+	<script src="/Leaflet.js"></script>
 </body>
 </html>
