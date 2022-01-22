@@ -8,7 +8,8 @@ let openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.
 	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map)
 
-let geoJSON = L.geoJSON();
+let geoJSON = {};
+let geoJSONLayer = L.geoJSON();
 let selection = L.geoJSON();
 let speed_map = 0;
 
@@ -21,30 +22,39 @@ function setSpeedMap() {
 		speed_map = false;
 		openStreetMap.setOpacity(1);
 	}
+	refreshGeoJson(geoJSON);
 }
 
 function lineStyle(feature) {
-	let disusage = feature.properties.disusage;
-	let maxspeed = feature.properties.maxspeed;
-	let between = (min, x, max) => x >= min && max > x;
+	let number = feature.properties.number;
 
-	if (disusage)
-		return { color: "#4a4a4a", "opacity": 0.8 };
+	return { color: "#445da7" };
+}
+
+function segmentStyle(feature) {
+	let disusage = feature.properties.disusage;
+	let maxspeed = feature.properties.max_speed;
+	let between = (min, x, max) => min <= x && x < max;
+
 	if (speed_map) {
 		if (between(1, maxspeed, 40))
-			return { color: "#ff0000" };
-		if (between(40, maxspeed, 70))
-			return { color: "#ff9500" };
-		if (between(70, maxspeed, 100))
-			return { color: "#f7de3b" };
+			return { color: "rgb(255,0,0)" };
+		if (between(40, maxspeed, 60))
+			return { color: "rgb(255,100,0)" };
+		if (between(60, maxspeed, 80))
+			return { color: "rgb(255,255,0)" };
+		if (between(80, maxspeed, 100))
+			return { color: "rgb(100,255,100)" };
 		if (between(100, maxspeed, 120))
-			return { color: "#d5d73c" };
+			return { color: "rgb(0,255,150)" };
 		if (between(120, maxspeed, 140))
-			return { color: "#bdf94d" };
+			return { color: "rgb(0,255,0)" };
 		if (between(140, maxspeed, 300))
-			return { color: "#21f24b" };
+			return { color: "rgb(0,255,255)" };
 		return { color: "#ffffff" }
 	}
+	if (disusage)
+		return { interactive: false, color: "#000000", "opacity": 0.8 };
 	return { color: "#445da7" }
 }
 
@@ -91,27 +101,46 @@ let geojsonMarkerOptions = {
 	fillOpacity: 0.8
 };
 
-function addSegments(segments) {
+function refreshGeoJson(features) {
+	let old_geoJSON = geoJSONLayer;
 	try {
-		let old_geoJSON = geoJSON;
-		geoJSON = L.geoJSON(segments, {
+		let newGeoJSONLayer = L.geoJSON(features, {
 			pointToLayer: function (feature, latlng) {
 				return pointStyle(feature, latlng);
 			},
 			onEachFeature: popUps,
+			filter: (feature) => {
+				if (speed_map && feature.geometry.type == 'MultiLineString' && map.getZoom() >= 10) {
+					return false;
+				}
+				else if (!speed_map && feature.geometry.type == 'LineString') {
+					if (feature.properties.disusage)
+						return true;
+					return false;
+				}
+				else
+					return true;
+			},
 			style: (feature) => {
-				if (feature.geometry.type == 'LineString')
+				if (feature.geometry.type == 'LineString') {
+					return segmentStyle(feature);
+				}
+				else if (feature.geometry.type == 'MultiLineString')
 					return lineStyle(feature);
 			}
-		}).addTo(map);
+		});
 		old_geoJSON.remove();
+		geoJSONLayer = newGeoJSONLayer;
+		geoJSONLayer.addTo(map);
+		geoJSON = features;
 	}
 	catch (error) {
 		console.error(error);
+		geoJSONLayer = old_geoJSON;
 	}
 }
 
-function getSegments() {
+function getGeoJson() {
 	let bounds = map.getBounds();
 
 	let url = main_url + '/bounds/';
@@ -124,11 +153,11 @@ function getSegments() {
 	console.log(url);
 	fetch(url)
 		.then(response => response.json())
-		.then(result => addSegments(result));
+		.then(result => refreshGeoJson(result));
 }
 
-getSegments();
-map.on('moveend', getSegments);
+getGeoJson();
+map.on('moveend', getGeoJson);
 
 let selection_to_remove = false;
 map.on('mouseout', () => {
@@ -140,28 +169,31 @@ map.on('mouseout', () => {
 
 function selectStation(ID) {
 	url = main_url + '/getElement/rail_station/' + ID;
+	console.log(url);
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
 			let coords = result.geometry.coordinates;
 			let c = L.latLng(coords[1], coords[0]);
-			map.setZoom(14);
-			map.flyTo(c);
+			map.flyTo(c, 14, { duration: 1.5, noMoveStart: true });
 		});
 }
 
 function selectLine(ID) {
 	url = main_url + '/getElement/rail_line/' + ID;
+	console.log(url);
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
-			let coords = result.geometry.coordinates[0];
-			let c1 = L.latLng(coords[0][1], coords[0][0]);
-			let c2 = L.latLng(coords[2][1], coords[2][0]);
-			map.fitBounds(L.latLngBounds(c1, c2));
+			if (result.properties.bounds) {
+				let coords = result.properties.bounds.coordinates[0];
+				let c1 = L.latLng(coords[0][1], coords[0][0]);
+				let c2 = L.latLng(coords[2][1], coords[2][0]);
+				map.fitBounds(L.latLngBounds(c1, c2));
+            }
 
 			selection.remove();
-			selection = L.geoJSON(result.properties.features, {
+			selection = L.geoJSON(result, {
 				style: { color: "#000000", weight: 15 }
 			});
 			selection.addTo(map);

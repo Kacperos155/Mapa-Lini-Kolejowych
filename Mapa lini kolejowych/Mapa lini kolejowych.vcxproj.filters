@@ -111,6 +111,9 @@
     <None Include="Website\search.css">
       <Filter>Website</Filter>
     </None>
+    <None Include="Website\map_popups.js">
+      <Filter>Website</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">

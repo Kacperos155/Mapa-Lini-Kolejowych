@@ -6,5 +6,6 @@
  "name": "Name",
  "rail line": "Line",
  "railway station": "Station",
- "railway stop": "Stop"
+ "railway stop": "Stop",
+ "voltage": "Voltage"
 }

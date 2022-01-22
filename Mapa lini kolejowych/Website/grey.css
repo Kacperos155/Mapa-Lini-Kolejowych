@@ -12,7 +12,7 @@ body {
 
 /* search.html */
 #SearchResult {
-	color: #cccccc;
+	color: #333333;
 }
 
 .result_table_row:nth-child(odd) {

@@ -6,5 +6,6 @@
  "name": "Nazwa",
  "rail line": "Linia",
  "railway station": "Dworzec",
- "railway stop": "Stacja"
+ "railway stop": "Stacja",
+ "voltage": "Napięcie"
 }

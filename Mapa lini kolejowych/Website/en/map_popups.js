@@ -3,10 +3,13 @@ function popUps(feature, layer) {
 	let type = "";
 	if (feature.geometry.type == 'LineString') {
 		type = "way";
-		if (feature.properties.line)
-			text += "Line: <strong>" + feature.properties.line + '</strong><br>';
-		if (feature.properties.maxspeed)
-			text += "Max speed: <strong>" + feature.properties.maxspeed + ' </strong>km/h';
+		if (feature.properties.number)
+			text += "Line: <strong>" + feature.properties.number + '</strong><br>';
+		if (feature.properties.max_speed)
+			text += "Max speed: <strong>" + feature.properties.max_speed + ' </strong>km/h<br>';
+		if (feature.properties.voltage)
+			if (feature.properties.voltage > 0)
+				text += "Voltage: <strong>" + feature.properties.voltage + ' </strong>V<br>';
 	}
 	else if (feature.geometry.type == "MultiLineString") {
 		type = "relation";
@@ -33,6 +36,9 @@ function popUps(feature, layer) {
 		text += 'Open in OpenStreetMap'
 		text += '</a>';
 	}
+	else {
+		text += "ID: " + feature.properties.id;
+    }
 	if (text)
 		layer.bindPopup(text);
 }
