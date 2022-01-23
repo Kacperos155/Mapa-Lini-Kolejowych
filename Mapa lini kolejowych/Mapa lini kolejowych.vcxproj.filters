@@ -59,7 +59,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vcpkg.json" />
     <None Include="Website\index.html">
       <Filter>Website</Filter>
     </None>
@@ -117,7 +116,7 @@
     <None Include="Website\Legend.js">
       <Filter>Website</Filter>
     </None>
-    <None Include="README.md" />
+    <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">

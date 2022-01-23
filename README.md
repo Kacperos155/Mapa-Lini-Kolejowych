@@ -2,8 +2,9 @@
 **EN: Interactive Map of Railway Lines**  
 Client-Server application using [Leaflet](https://leafletjs.com/)
 to visualize rail data downloaded from [OpenStreetMap](https://www.openstreetmap.org/) servers.
+Application in Polish and English languages.
 
-![screenshot](https://github.com/Kacperos155/Mapa-Lini-Kolejowych/2022-01-23.png)
+![screenshot](https://raw.githubusercontent.com/Kacperos155/Mapa-Lini-Kolejowych/master/2022-01-23.png)
 
 ## Using and Building
 ### Using
