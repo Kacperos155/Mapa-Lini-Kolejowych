@@ -1,6 +1,8 @@
 {
- "green_style": "Zielony styl",
- "grey_style": "Szary styl",
+ "green_style": "Zieleń kartografa",
+ "grey_style": "Szara rzeczywistość",
  "lang_tag": "pl-PL",
+ "language": "Język",
+ "style": "Styl",
  "title": "Interaktywna Mapa Lini Kolejowych w Polsce"
 }

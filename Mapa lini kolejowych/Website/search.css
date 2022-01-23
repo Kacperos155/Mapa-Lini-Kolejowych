@@ -1,21 +1,59 @@
+.radio_buttons {
+	display: flex;
+	align-items: flex-end;
+}
+
+.radio_button {
+	color: rgb(155, 155, 155);
+	background-color: rgb(35, 67, 44);
+	padding: 3px;
+}
+
+.radio_button:hover {
+	color: rgb(255, 255, 255);
+	padding: 4px;
+}
+
+input.hide:checked + .radio_button {
+	color: rgb(255, 255, 255);
+	background-color: rgb(88, 205, 28);
+	padding: 5px 10px;
+}
+
+#SearchType {
+	display: flex;
+	margin: 0px 3px;
+}
+
 #SearchBar {
 	border: 1px solid;
-	margin: 3px;
+	margin: 0px 3px 3px 3px;
 	display: flex;
 }
 
 #SearchText {
 	flex: auto;
+	border: none;
 }
 
 #SearchButton {
 	flex: 0.25;
+	border: none;
+	border-left: 1px solid;
+}
+
+#SearchButton:hover {
+	background-color: rgb(48, 221, 28);
 }
 
 #SearchResult {
 	margin: 3px;
 	width: 100%;
-	color: #39473d;
+	color: rgb(57, 71, 61);
+	display: none;
+}
+
+.hide {
 	display: none;
 }
 
@@ -25,22 +63,22 @@
 }
 
 .result_table_row:nth-child(odd) {
-	background-color: #9fd185;
+	background-color: rgb(159, 209, 133);
 }
 
 .result_table_row:hover {
-	background-color: #30dd1c;
+	background-color: rgb(48, 221, 28);
 }
 
 .header {
-	color: #ffffff;
-	background-color: #23432c;
+	color: rgb(255, 255, 255);
+	background-color: rgb(35, 67, 44);
 }
 
 .result_ID {
 	width: 90%;
-	background-color: #aece9c;
-	border-color: #23432c;
+	background-color: rgb(174, 206, 156);
+	border-color: rgb(35, 67, 44);
 }
 
 #no_result {

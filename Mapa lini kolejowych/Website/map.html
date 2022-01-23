@@ -30,7 +30,6 @@
 
 		#controls {
 			display: flex;
-			margin-bottom: 1px;
 			flex-direction: column;
 		}
 
@@ -40,11 +39,30 @@
 			min-height: 100px;
 			border: 1px solid;
 		}
+
+        button.untoggled {
+            background-color: rgb(220, 240, 220);
+            border: 1px solid;
+            border-bottom: none;
+        }
+		button.untoggled:hover {
+			background-color: rgb(180, 220, 180);
+		}
+
+        button.toggled {
+            background-color: rgb(180, 220, 180);
+            border: 1px solid;
+            border-bottom: none;
+        }
+		button.toggled:hover {
+			background-color: rgb(220, 240, 220);
+		}
 	</style>
+	<link rel="stylesheet" href="/getStyle" id="theme">
 </head>
 <body>
 	<div id="controls">
-		<button id="speed_map_toggle" onclick="setSpeedMap()">!_speed_map_toogle_!</button>
+		<button id="speed_map_toggle" onclick="setSpeedMap()" class="untoggled">!_speed_map_toggle_!</button>
 	</div>
 	<div id="map"></div>
 	<script src="/getTranslation/map_popups.js"></script>

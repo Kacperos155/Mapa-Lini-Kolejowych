@@ -19,14 +19,22 @@ iframe {
 	border-style: none;
 }
 
-.styles {
+.dropdown {
 	display: flex;
-	justify-content: flex-start;
+	border: 1px groove;
+	padding: 3px 10px;
 }
 
-.languages {
+.dropdown-content {
+	display: none;
+	position: absolute;
+	padding: 5px 5px;
+	z-index: 1;
+}
+
+.dropdown:hover .dropdown-content {
 	display: flex;
-	justify-content: flex-end;
+	flex-direction: column;
 }
 
 #main_container {

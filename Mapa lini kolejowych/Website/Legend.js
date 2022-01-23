@@ -40,7 +40,7 @@ addLegendSpeedLimit("!_too low zoom_!", defaultLineColor);
 		addLegendSpeedLimit(label, speedLimits[i].color);
 	}
 	let last = speedLimits[speedLimits.length - 1];
-	addLegendSpeedLimit(label_prefix + last.min_speed + " km/h", last.color);
+	addLegendSpeedLimit(label_prefix + "<= " + last.min_speed + " km/h", last.color);
 }
 
 let currentLegend = L.control.Legend();
@@ -69,7 +69,7 @@ function refreshLegend(speed_map) {
 	}
 
 	currentLegend = L.control.Legend({
-		title: "Legend",
+		title: "!_legend_!",
 		position: "bottomleft",
 		collapsed: !speed_map,
 		column: legends.length / Legend_markers.length,

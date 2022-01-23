@@ -3,27 +3,69 @@ html {
 }
 
 body#main {
-	background-color: #cccccc;
+	background-color: rgb(204, 204, 204);
 }
 
 body {
-	background-color: #dddddd;
+	background-color: rgb(221, 221, 221);
+}
+
+#title {
+	text-shadow: 0px 0px 4px rgb(64, 64, 64);
+}
+
+.dropdown {
+	background-color: rgb(221, 221, 221);
+}
+
+.dropdown-content {
+	background-color: rgb(221, 221, 221);
 }
 
 /* search.html */
+.radio_button {
+	color: rgb(155, 155, 155);
+	background-color: rgb(64, 64, 64);
+}
+
+.radio_button:hover {
+	color: rgb(255, 255, 255);
+}
+
+input.hide:checked + .radio_button {
+	background-color: rgb(159 209 133);
+}
+
 #SearchResult {
-	color: #333333;
+	color: rgb(64, 64, 64);
 }
 
 .result_table_row:nth-child(odd) {
-	background-color: #cccccc;
+	background-color: rgb(204, 204, 204);
 }
 
 .result_table_row:hover {
-	background-color: #9fd185;
+	background-color: rgb(159, 209, 133);
 }
 
 .header {
-	color: #ffffff;
-	background-color: #404040;
+	color: rgb(255, 255, 255);
+	background-color: rgb(64, 64, 64);
+}
+
+/* map.html */
+button.untoggled {
+	background-color: rgb(221, 221, 221);
+}
+
+button.untoggled:hover {
+	background-color: rgb(204, 204, 204);
+}
+
+button.toggled {
+	background-color: rgb(204, 204, 204);
+}
+
+button.toggled:hover {
+	background-color: rgb(221, 221, 221);
 }

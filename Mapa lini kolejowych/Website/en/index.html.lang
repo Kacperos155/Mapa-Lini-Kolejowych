@@ -1,6 +1,8 @@
 {
- "green_style": "Green Style",
- "grey_style": "Grey Style",
+ "green_style": "Cartographer's green",
+ "grey_style": "Grey reality",
  "lang_tag": "en-GB",
+ "language": "Language",
+ "style": "Style",
  "title": "Interactive Rail Lines Map of Poland"
 }

@@ -13,14 +13,20 @@
 </head>
 <body id="main">
 	<header>
-		<div class="languages">
-			<button onclick="changeStyle('green')">Green Style</button>
-			<button onclick="changeStyle('grey')">Grey Style</button>
+		<div class="dropdown">
+			<span>Style</span>
+			<div class="dropdown-content" style="justify-content: flex-start">
+				<button onclick="changeStyle('green')">Cartographer's green</button>
+				<button onclick="changeStyle('grey')">Grey reality</button>
+			</div>
 		</div>
 		<h1 id="title">Interactive Rail Lines Map of Poland</h1>
-		<div class="styles">
-			<button onclick="changeLanguage('en')">English</button>
-			<button onclick="changeLanguage('pl')">Polski</button>
+		<div class="dropdown" style="justify-content: flex-end">
+			<span>Language</span>
+			<div class="dropdown-content">
+				<button onclick="changeLanguage('en')">English</button>
+				<button onclick="changeLanguage('pl')">Polski</button>
+			</div>
 		</div>
 	</header>
 

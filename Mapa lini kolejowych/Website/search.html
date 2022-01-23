@@ -8,10 +8,12 @@
 	<link rel="stylesheet" href="/getStyle" id="theme">
 </head>
 <body>
-	<input type="radio" id="searchType_stations" name="searchType" value="rail_station" checked>
-	<label for="searchType_stations">!_rail_stations_!</label>
-	<input type="radio" id="searchType_lines" name="searchType" value="rail_line">
-	<label for="searchType_lines">!_rail_lines_!</label>
+	<div id="SearchType" class="radio_buttons">
+		<input type="radio" id="searchType_stations" name="searchType" value="rail_station" class="hide" checked>
+		<label for="searchType_stations" class="radio_button">!_rail_stations_!</label>
+		<input type="radio" id="searchType_lines" name="searchType" value="rail_line" class="hide">
+		<label for="searchType_lines" class="radio_button">!_rail_lines_!</label>
+	</div>
 	<div id="SearchBar">
 		<input type="text" id="SearchText" autofocus>
 		<button id="SearchButton" onclick="Search()">!_search_!</button>

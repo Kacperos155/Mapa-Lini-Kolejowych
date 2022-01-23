@@ -13,14 +13,20 @@
 </head>
 <body id="main">
 	<header>
-		<div class="languages">
-			<button onclick="changeStyle('green')">Zielony styl</button>
-			<button onclick="changeStyle('grey')">Szary styl</button>
+		<div class="dropdown">
+			<span>Styl</span>
+			<div class="dropdown-content" style="justify-content: flex-start">
+				<button onclick="changeStyle('green')">Zieleń kartografa</button>
+				<button onclick="changeStyle('grey')">Szara rzeczywistość</button>
+			</div>
 		</div>
 		<h1 id="title">Interaktywna Mapa Lini Kolejowych w Polsce</h1>
-		<div class="styles">
-			<button onclick="changeLanguage('en')">English</button>
-			<button onclick="changeLanguage('pl')">Polski</button>
+		<div class="dropdown" style="justify-content: flex-end">
+			<span>Język</span>
+			<div class="dropdown-content">
+				<button onclick="changeLanguage('en')">English</button>
+				<button onclick="changeLanguage('pl')">Polski</button>
+			</div>
 		</div>
 	</header>
 

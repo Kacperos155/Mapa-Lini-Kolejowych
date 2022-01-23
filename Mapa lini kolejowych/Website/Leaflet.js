@@ -19,13 +19,17 @@ let selection = L.geoJSON();
 let speed_map = 0;
 
 function setSpeedMap() {
+	const button = document.querySelector('button[onclick="setSpeedMap()"]');
+
 	if (!speed_map) {
 		speed_map = true;
 		openStreetMap.setOpacity(0.25);
+		button.className = "toggled";
 	}
 	else if (speed_map) {
 		speed_map = false;
 		openStreetMap.setOpacity(1);
+		button.className = "untoggled";
 	}
 	refreshGeoJson(geoJSON);
 	refreshLegend(speed_map);

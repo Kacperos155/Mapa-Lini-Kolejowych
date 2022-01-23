@@ -34,13 +34,13 @@ function addLegendSpeedLimit(label, color) {
 addLegendSpeedLimit("Zoom is too low", defaultLineColor);
 {
 	let lastSpeedLimit = {};
-	let label_prefix = "Speed limit:" + ": ";
+	let label_prefix = "Speed limit" + ": ";
 	for (let i = 0; i < (speedLimits.length - 1); ++i) {
 		let label = label_prefix + speedLimits[i].min_speed + " - " + (speedLimits[i + 1].min_speed - 1) + " km/h";
 		addLegendSpeedLimit(label, speedLimits[i].color);
 	}
 	let last = speedLimits[speedLimits.length - 1];
-	addLegendSpeedLimit(label_prefix + last.min_speed + " km/h", last.color);
+	addLegendSpeedLimit(label_prefix + "<= " + last.min_speed + " km/h", last.color);
 }
 
 let currentLegend = L.control.Legend();
