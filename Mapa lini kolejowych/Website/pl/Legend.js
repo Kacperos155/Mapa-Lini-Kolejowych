@@ -31,7 +31,6 @@ function addLegendSpeedLimit(label, color) {
 		});
 }
 
-addLegendSpeedLimit("Zbyt małe przybliżenie", defaultLineColor);
 {
 	let lastSpeedLimit = {};
 	let label_prefix = "Limit prędkości" + ": ";
@@ -43,29 +42,44 @@ addLegendSpeedLimit("Zbyt małe przybliżenie", defaultLineColor);
 	addLegendSpeedLimit(label_prefix + "<= " + last.min_speed + " km/h", last.color);
 }
 
+const Legend_Markers_and_SpeedLimits = Legend_markers.concat(Legend_speedLimits);
+const Legend_Markers_and_InvalidSpeedLimits = Legend_markers.concat([
+	{
+		label: "Zbyt małe przybliżenie",
+		type: "polyline",
+		weight: 0,
+		color: "rgb(255,255,255)"
+	}
+]);
+const Legend_Markers_Lines = Legend_markers.concat([
+	{
+		label: "Linia kolejowa",
+		type: "polyline",
+		weight: 5,
+		color: defaultLineColor
+	},
+	{
+		label: "Nieużywane tory",
+		type: "polyline",
+		weight: 5,
+		color: "rgb(0, 0, 0)"
+	}
+]);
+
 let currentLegend = L.control.Legend();
 
 function refreshLegend(speed_map) {
 	currentLegend.remove();
 
 	if (speed_map) {
-		legends = Legend_markers.concat(Legend_speedLimits);
+		let zoom = map.getZoom();
+		if (10 <= zoom)
+			legends = Legend_Markers_and_SpeedLimits;
+		else
+			legends = Legend_Markers_and_InvalidSpeedLimits;
 	}
 	else {
-		legends = Legend_markers.concat([
-			{
-				label: "Linia kolejowa",
-				type: "polyline",
-				weight: 5,
-				color: defaultLineColor
-			},
-			{
-				label: "Nieużywane tory",
-				type: "polyline",
-				weight: 5,
-				color: "rgb(0, 0, 0)"
-			}
-		]);
+		legends = Legend_Markers_Lines;
 	}
 
 	currentLegend = L.control.Legend({
@@ -80,4 +94,4 @@ function refreshLegend(speed_map) {
 	currentLegend.addTo(map);
 }
 
-refreshLegend(false);
+refreshLegend(speed_map);

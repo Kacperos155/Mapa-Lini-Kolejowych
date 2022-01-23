@@ -62,6 +62,7 @@ nlohmann::json GeoJSON::getRailLine(SQLite::Statement& sql_statement)
 	auto& properties = obj["properties"];
 
 	properties["number"] = sql_statement.getColumn("Number").getText();
+	properties["color"] = sql_statement.getColumn("Color").getText();
 
 	if (auto column = sql_statement.getColumn("Name"); !column.isNull())
 		properties["name"] = column.getText();

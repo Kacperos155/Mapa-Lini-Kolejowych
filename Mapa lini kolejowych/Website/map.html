@@ -30,7 +30,6 @@
 
 		#controls {
 			display: flex;
-			flex-direction: column;
 		}
 
 		#map {
@@ -62,7 +61,8 @@
 </head>
 <body>
 	<div id="controls">
-		<button id="speed_map_toggle" onclick="setSpeedMap()" class="untoggled">!_speed_map_toggle_!</button>
+		<button id="lines_coloring_toggle" onclick="toggleLinesColoring()" class="untoggled" style="flex:1">!_lines_coloring_toggle_!</button>
+		<button id="speed_map_toggle" onclick="toggleSpeedMap()" class="untoggled" style="flex:1">!_speed_map_toggle_!</button>
 	</div>
 	<div id="map"></div>
 	<script src="/getTranslation/map_popups.js"></script>

@@ -59,11 +59,11 @@ button.untoggled {
 }
 
 button.untoggled:hover {
-	background-color: rgb(159, 209, 133);
+	background-color: rgb(221, 255, 179);
 }
 
 button.toggled {
-	background-color: rgb(159, 209, 133);
+	background-color: rgb(88, 205, 28);
 }
 
 button.toggled:hover {

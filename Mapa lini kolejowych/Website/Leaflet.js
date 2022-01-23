@@ -3,8 +3,6 @@ if (map == null) {
 	var map = L.map('map');
 }
 
-console.log(map);
-
 map.setView([52.018, 19.137], 6);
 let openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -16,18 +14,18 @@ map.attributionControl.addAttribution("Kacper Zielinski 2022");
 let geoJSON = {};
 let geoJSONLayer = L.geoJSON();
 let selection = L.geoJSON();
-let speed_map = 0;
+let lines_coloring = false;
+let speed_map = false;
 
-function setSpeedMap() {
-	const button = document.querySelector('button[onclick="setSpeedMap()"]');
+function toggleSpeedMap() {
+	speed_map = !speed_map;
+	const button = document.querySelector('button[onclick="toggleSpeedMap()"]');
 
-	if (!speed_map) {
-		speed_map = true;
+	if (speed_map) {
 		openStreetMap.setOpacity(0.25);
 		button.className = "toggled";
 	}
-	else if (speed_map) {
-		speed_map = false;
+	else {
 		openStreetMap.setOpacity(1);
 		button.className = "untoggled";
 	}
@@ -77,13 +75,27 @@ function speedLimitColor(speedLimit) {
 			if (limit.min_speed > speedLimit)
 				return currentLimit;
 			currentLimit = limit;
-        }
+		}
 	}
 	return { color: "rgb(255,255,255)" };
 }
 
+function toggleLinesColoring() {
+	lines_coloring = !lines_coloring;
+	const button = document.querySelector('button[onclick="toggleLinesColoring()"]');
+
+	if (lines_coloring) {
+		button.className = "toggled";
+	}
+	else {
+		button.className = "untoggled";
+	}
+	refreshGeoJson(geoJSON);
+}
+
 function lineStyle(feature) {
-	let number = feature.properties.number;
+	if (lines_coloring && feature.properties.color)
+		return { color: '#' + feature.properties.color };
 
 	return { color: defaultLineColor };
 }
@@ -132,15 +144,6 @@ function pointStyle(feature, LatLng) {
 		default: return {};
 	}
 }
-
-let geojsonMarkerOptions = {
-	radius: 8,
-	fillColor: "#ff7800",
-	color: "#000",
-	weight: 1,
-	opacity: 1,
-	fillOpacity: 0.8
-};
 
 function refreshGeoJson(features) {
 	let old_geoJSON = geoJSONLayer;
@@ -199,6 +202,7 @@ function getGeoJson() {
 
 getGeoJson();
 map.on('moveend', getGeoJson);
+map.on("zoomend", () => { refreshLegend(speed_map); });
 
 let selection_to_remove = false;
 map.on('mouseout', () => {

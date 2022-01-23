@@ -30,7 +30,6 @@
 
 		#controls {
 			display: flex;
-			flex-direction: column;
 		}
 
 		#map {
@@ -62,7 +61,8 @@
 </head>
 <body>
 	<div id="controls">
-		<button id="speed_map_toggle" onclick="setSpeedMap()" class="untoggled">Tryb ograniczeń prędkości</button>
+		<button id="lines_coloring_toggle" onclick="toggleLinesColoring()" class="untoggled" style="flex:1">Tryb kolorowania lini kolejowych</button>
+		<button id="speed_map_toggle" onclick="toggleSpeedMap()" class="untoggled" style="flex:1">Tryb ograniczeń prędkości</button>
 	</div>
 	<div id="map"></div>
 	<script src="/getTranslation/map_popups.js"></script>

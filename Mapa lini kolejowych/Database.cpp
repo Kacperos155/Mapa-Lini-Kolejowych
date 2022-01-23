@@ -320,11 +320,20 @@ bool Database::importData_RailLine(const nlohmann::json& json_data)
 		auto insert_statement = SQLite::Statement{ database, sql::rail_line_insert};
 
 		static auto id = std::string{};
+		static auto color = std::string{};
 		static auto boundry = std::string{};
 		static auto line = std::string{};
 
 		id = json_data["id"].dump();
 		insert_statement.bind(":id", id);
+
+		auto id_hash = std::hash<std::string>{}(id);
+		color = fmt::format("{:x}", id_hash % 200 + 55);
+		id_hash /= 255;
+		color += fmt::format("{:x}", id_hash % 200 + 55);
+		id_hash /= 255;
+		color += fmt::format("{:x}", id_hash % 200 + 55);
+		insert_statement.bind(":color", color);
 
 		const auto& tags = json_data["tags"];
 		
