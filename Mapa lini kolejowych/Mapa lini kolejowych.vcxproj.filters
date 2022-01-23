@@ -117,6 +117,7 @@
     <None Include="Website\Legend.js">
       <Filter>Website</Filter>
     </None>
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">
