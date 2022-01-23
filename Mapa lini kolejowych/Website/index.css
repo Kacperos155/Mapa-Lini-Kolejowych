@@ -24,10 +24,6 @@ iframe {
 	justify-content: flex-start;
 }
 
-#title {
-	width:80%;
-}
-
 .languages {
 	display: flex;
 	justify-content: flex-end;
@@ -51,12 +47,10 @@ button {
 
 #map_frame {
 	flex: 1;
-	width: 35%;
 	margin: 2px 5px;
 }
 
 #content {
 	flex: 2;
 	margin-left: 5px;
-	background-color: #c1daa4;
 }

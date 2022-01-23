@@ -205,6 +205,7 @@
     <None Include="Website\index.html" />
     <None Include="Website\index.js" />
     <None Include="Website\Leaflet.js" />
+    <None Include="Website\Legend.js" />
     <None Include="Website\map.html" />
     <None Include="Website\map_popups.js" />
     <None Include="Website\search.css" />

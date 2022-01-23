@@ -114,6 +114,9 @@
     <None Include="Website\map_popups.js">
       <Filter>Website</Filter>
     </None>
+    <None Include="Website\Legend.js">
+      <Filter>Website</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">

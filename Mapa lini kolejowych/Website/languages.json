@@ -13,6 +13,7 @@
   "index.html",
   "map.html",
   "search.html",
-  "map_popups.js"
+  "map_popups.js",
+  "Legend.js"
  ]
 }

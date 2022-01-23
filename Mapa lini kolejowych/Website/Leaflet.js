@@ -3,10 +3,15 @@ if (map == null) {
 	var map = L.map('map');
 }
 
+console.log(map);
+
 map.setView([52.018, 19.137], 6);
 let openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map)
+
+L.control.scale({ imperial: false }).addTo(map);
+map.attributionControl.addAttribution("Kacper Zielinski 2022");
 
 let geoJSON = {};
 let geoJSONLayer = L.geoJSON();
@@ -23,39 +28,71 @@ function setSpeedMap() {
 		openStreetMap.setOpacity(1);
 	}
 	refreshGeoJson(geoJSON);
+	refreshLegend(speed_map);
+}
+
+const speedLimits = [
+	{
+		min_speed: 1,
+		color: "rgb(255,0,0)"
+	},
+	{
+		min_speed: 40,
+		color: "rgb(255,100,0)"
+	},
+	{
+		min_speed: 60,
+		color: "rgb(255,180,0)"
+	},
+	{
+		min_speed: 80,
+		color: "rgb(255,255,0)"
+	},
+	{
+		min_speed: 100,
+		color: "rgb(120,150,0)"
+	},
+	{
+		min_speed: 120,
+		color: "rgb(0,255,0)"
+	},
+	{
+		min_speed: 140,
+		color: "rgb(0,255,255)"
+	}
+]
+
+const defaultLineColor = "rgb(50, 120, 230)";
+
+function speedLimitColor(speedLimit) {
+	let between = (min, x, max) => min <= x && x < max;
+	let currentLimit = {};
+
+	if (0 < speedLimit) {
+		for (const limit of speedLimits) {
+			if (limit.min_speed > speedLimit)
+				return currentLimit;
+			currentLimit = limit;
+        }
+	}
+	return { color: "rgb(255,255,255)" };
 }
 
 function lineStyle(feature) {
 	let number = feature.properties.number;
 
-	return { color: "#445da7" };
+	return { color: defaultLineColor };
 }
 
 function segmentStyle(feature) {
 	let disusage = feature.properties.disusage;
-	let maxspeed = feature.properties.max_speed;
-	let between = (min, x, max) => min <= x && x < max;
 
 	if (speed_map) {
-		if (between(1, maxspeed, 40))
-			return { color: "rgb(255,0,0)" };
-		if (between(40, maxspeed, 60))
-			return { color: "rgb(255,100,0)" };
-		if (between(60, maxspeed, 80))
-			return { color: "rgb(255,255,0)" };
-		if (between(80, maxspeed, 100))
-			return { color: "rgb(100,255,100)" };
-		if (between(100, maxspeed, 120))
-			return { color: "rgb(0,255,150)" };
-		if (between(120, maxspeed, 140))
-			return { color: "rgb(0,255,0)" };
-		if (between(140, maxspeed, 300))
-			return { color: "rgb(0,255,255)" };
-		return { color: "#ffffff" }
+		return { color: speedLimitColor(feature.properties.max_speed).color };
 	}
 	if (disusage)
-		return { interactive: false, color: "#000000", "opacity": 0.8 };
-	return { color: "#445da7" }
+		return { interactive: false, color: "rgb(0,0,0)", "opacity": 0.8 };
+	return { color: defaultLineColor }
 }
 
 let TrainMarker_Large = L.Icon.extend({
@@ -190,11 +227,11 @@ function selectLine(ID) {
 				let c1 = L.latLng(coords[0][1], coords[0][0]);
 				let c2 = L.latLng(coords[2][1], coords[2][0]);
 				map.fitBounds(L.latLngBounds(c1, c2));
-            }
+			}
 
 			selection.remove();
 			selection = L.geoJSON(result, {
-				style: { color: "#000000", weight: 15 }
+				style: { color: "#ffffff", weight: 15 }
 			});
 			selection.addTo(map);
 			selection_to_remove = true;
@@ -218,6 +255,6 @@ window.addEventListener('message', (event) => {
 				selectStation(id);
 			else if (type == 'rail_line')
 				selectLine(id);
-        }
+		}
 	}
 })
