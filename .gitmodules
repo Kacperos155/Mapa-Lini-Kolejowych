@@ -1,0 +1,3 @@
+[submodule "Mapa lini kolejowych/Website/Leaflet.Legend"]
+	path = Mapa lini kolejowych/Website/Leaflet.Legend
+	url = https://github.com/ptma/Leaflet.Legend
