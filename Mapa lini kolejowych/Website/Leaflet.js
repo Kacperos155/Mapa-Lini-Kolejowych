@@ -111,38 +111,25 @@ function segmentStyle(feature) {
 	return { color: defaultLineColor }
 }
 
-let TrainMarker_Large = L.Icon.extend({
-	options: { iconSize: [30, 30] }
-});
-
-let TrainMarker_Small = L.Icon.extend({
-	options: { iconSize: [20, 20] }
-});
-
-//Icons from freepik.com
-let station_icon = new TrainMarker_Large({
-	iconUrl: '/Icons/train.png'
-})
-let disused_station_icon = new TrainMarker_Large({
-	iconUrl: '/Icons/train_old.png'
-})
-let halt_icon = new TrainMarker_Small({
-	iconUrl: '/Icons/train_small.png'
-})
-let disused_halt_icon = new TrainMarker_Small({
-	iconUrl: '/Icons/train_old.png'
-})
-
 function pointStyle(feature, LatLng) {
 	let type = feature.properties.type;
-
+	let src = "";
 	switch (feature.properties.type) {
-		case 1: return L.marker(LatLng, { icon: station_icon });
-		case 2: return L.marker(LatLng, { icon: halt_icon });
-		case 3: return L.marker(LatLng, { icon: disused_station_icon });
-		case 4: return L.marker(LatLng, { icon: disused_halt_icon });
-		default: return {};
+		case 1: src = '/Icons/train.png'; break;
+		case 2: src = '/Icons/train_small.png'; break;
+		case 3: src = '/Icons/train_old.png'; break;
+		case 4: src = '/Icons/train_old.png'; break;
 	}
+	let size = 32;
+	if (feature.properties.type == 2 || feature.properties.type == 4)
+		size = 20;
+
+	let html = '<img src="' + src + '" width=' + size + ' height=' + size + '>' +
+		"<strong>" + feature.properties.name + "</strong>";
+
+	let icon = L.divIcon({ className: "leaflet-divIcon", html: html });
+
+	return L.marker(LatLng, { icon: icon });
 }
 
 function refreshGeoJson(features) {
