@@ -6,8 +6,7 @@
 #include <iostream>
 
 #include "GeoJSON_conversion.h"
-#include "SQL/Tables.sql"
-#include "SQL/Queries.sql"
+#include "Data Types/Database_Types.hpp"
 
 Database::Database(const std::filesystem::path& database_path)
 {
@@ -16,10 +15,16 @@ Database::Database(const std::filesystem::path& database_path)
 
 void Database::showInfo()
 {
+	auto show_amount = [&](std::string_view table)
+	{
+		auto amount = database.execAndGet(fmt::format(R"(SELECT COUNT(*) FROM "{}";)", table)).getInt64();
+		fmt::print("\t {}: {}\n", table, amount);
+	};
+
 	fmt::print("\t Timestamp: {}\n", timestamp);
-	fmt::print("\t Segments: {}\n", database.execAndGet(R"(SELECT COUNT(*) FROM "Segments";)").getText());
-	fmt::print("\t Rail lines: {}\n", database.execAndGet(R"(SELECT COUNT(*) FROM "Rail lines";)").getText());
-	fmt::print("\t Rail stations: {}\n", database.execAndGet(R"(SELECT COUNT(*) FROM "Rail stations";)").getText());
+	show_amount(Railway::sql_table_name);
+	show_amount(Railway_line::sql_table_name);
+	show_amount(Railway_station::sql_table_name);
 
 	fmt::print("\t Min Lat: {:.2f}, Min Lon: {:.2f}\n", minlat, minlon);
 	fmt::print("\t Max Lat: {:.2f}, Max Lon: {:.2f}\n", maxlat, maxlon);
@@ -53,7 +58,14 @@ bool Database::importFromFile(const std::filesystem::path& json_file)
 void Database::loadFromFile(const std::filesystem::path& database_path)
 {
 	database = SQLite::Database(database_path.string(), SQLite::OPEN_READONLY);
-	database.loadExtension("mod_spatialite.dll", nullptr);
+	try
+	{
+		database.loadExtension("mod_spatialite.dll", nullptr);
+	}
+	catch (SQLite::Exception& e)
+	{
+		fmt::print("{}\n", e.what());
+	}
 
 	SQLite::Statement infos(database, "SELECT * FROM Info");
 	while (infos.executeStep())
@@ -83,12 +95,12 @@ void Database::saveToFile(const std::filesystem::path& database_path)
 const std::string& Database::find(std::string_view query, std::string_view type, unsigned limit)
 {
 	static std::string buffer{};
-	auto find_query = sql::query::search_station;
+	auto find_query = Railway_station::sql_search;
 	auto location_function = GeoJSON::getRailStation;
 
 	if (type == "rail_line")
 	{
-		find_query = sql::query::search_rail_line;
+		find_query = Railway_line::sql_search;
 		location_function = GeoJSON::getRailLine;
 	}
 	else if (type != "rail_station")
@@ -97,7 +109,7 @@ const std::string& Database::find(std::string_view query, std::string_view type,
 	}
 
 	nlohmann::json j;
-	auto search = SQLite::Statement(database, find_query);
+	auto search = SQLite::Statement(database, find_query.data());
 	search.bind(1, fmt::format("%{}%", query));
 	search.bind(2, limit);
 
@@ -181,8 +193,22 @@ bool Database::importData(const nlohmann::json& json_data)
 {
 	database = SQLite::Database(":memory:", SQLite::OPEN_CREATE | SQLite::OPEN_READWRITE);
 	database.loadExtension("mod_spatialite.dll", nullptr);
-	database.exec(sql::tables);
 	SQLite::Transaction transaction(database);
+
+	try
+	{
+		database.exec(sql_init_spatialite.data());
+		database.exec(Railnode::sql_create.data());
+		database.exec(Railway::sql_create.data());
+		database.exec(Railway_line::sql_create.data());
+		database.exec(Railway_station::sql_create.data());
+		database.exec(Variable::sql_create.data());
+	}
+	catch (const SQLite::Exception& e)
+	{
+		catchSQLiteException(e, "recreating tables");
+		return false;
+	}
 
 	std::string type{};
 	type.reserve(10);
@@ -194,7 +220,7 @@ bool Database::importData(const nlohmann::json& json_data)
 		element["type"].get_to(type);
 		if (type == "way")
 		{
-			if (!importData_Segment(element))
+			if (!importData_Railway(element))
 				++invalid;
 			else if (element.contains("bounds"))
 			{
@@ -205,12 +231,12 @@ bool Database::importData(const nlohmann::json& json_data)
 		}
 		else if (type == "relation")
 		{
-			if (!importData_RailLine(element))
+			if (!importData_RailwayLine(element))
 				++invalid;
 		}
 		else if (type == "node")
 		{
-			if (!importData_Station(element))
+			if (!importData_RailwayStation(element))
 				++invalid;
 			else
 			{
@@ -221,29 +247,30 @@ bool Database::importData(const nlohmann::json& json_data)
 		}
 	}
 
-	auto insert_statement = SQLite::Statement{ database, sql::info_insert };
-	auto insert_info = [&insert_statement](std::string_view key, auto value)
+	try
 	{
-		try {
+		auto insert_statement = SQLite::Statement{ database, Variable::sql_insert.data() };
+		auto insert_info = [&insert_statement](std::string_view key, auto value)
+		{
 			insert_statement.reset();
 			insert_statement.bind(1, key.data());
 			insert_statement.bind(2, value);
 			insert_statement.exec();
-		}
-		catch (const SQLite::Exception& e)
-		{
-			catchSQLiteException(e, "inserting information");
-			return false;
-		}
-	};
-	timestamp = json_data["osm3s"]["timestamp_osm_base"].get<std::string>();
-	insert_info("timestamp", timestamp);
-	insert_info("minlon", minlon);
-	insert_info("minlat", minlat);
-	insert_info("maxlon", maxlon);
-	insert_info("maxlat", maxlat);
+		};
+		timestamp = json_data["osm3s"]["timestamp_osm_base"].get<std::string>();
+		insert_info("timestamp", timestamp);
+		insert_info("minlon", minlon);
+		insert_info("minlat", minlat);
+		insert_info("maxlon", maxlon);
+		insert_info("maxlat", maxlat);
+	}
+	catch (const SQLite::Exception& e)
+	{
+		catchSQLiteException(e, "inserting information");
+		return false;
+	}
 
-	splitIntoTiles();
+	//splitIntoTiles();
 	transaction.commit();
 
 	fmt::print("Database created: \n");
@@ -253,11 +280,11 @@ bool Database::importData(const nlohmann::json& json_data)
 	return true;
 }
 
-bool Database::importData_Segment(const nlohmann::json& json_data)
+bool Database::importData_Railway(const nlohmann::json& json_data)
 {
 	try
 	{
-		auto insert_statement = SQLite::Statement{ database, sql::segment_insert };
+		auto insert_statement = SQLite::Statement{ database, Railway::sql_insert.data() };
 
 		static auto id = std::string{};
 		static auto boundry = std::string{};
@@ -268,7 +295,7 @@ bool Database::importData_Segment(const nlohmann::json& json_data)
 		insert_statement.bind(":id", id);
 
 		const auto& tags = json_data["tags"];
-		if (!bindTag(insert_statement, ":line_number", getTag(tags, "ref")))
+		if (!bindTag(insert_statement, ":line_name", getTag(tags, "ref")))
 		{
 			insert_statement.reset();
 			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid segment ({}): Line number is empty \n", id);
@@ -276,14 +303,19 @@ bool Database::importData_Segment(const nlohmann::json& json_data)
 		}
 		bindTag(insert_statement, ":usage", getTag(tags, "usage"));
 		bindTag(insert_statement, ":max_speed", getTag(tags, "maxspeed"));
-		bindTag(insert_statement, ":voltage", getTag(tags, "voltage"));
 
-		if (tags.contains("disused:railway") || tags["railway"] == "disused")
+		//TODO Repair railway tags
+		/*if (tags.contains("disused:railway") || tags["railway"] == "disused")
 			disusage = "disused";
 		else if (tags.contains("abandoned:railway"))
 			disusage = "abandoned";
 		bindTag(insert_statement, ":disusage", disusage.size() ? &disusage : nullptr);
 		disusage.clear();
+
+		if (tags.contains("electrified"))
+		{
+			bindTag(insert_statement, ":disusage", disusage.size() ? &disusage : nullptr);
+		}*/
 
 		const auto& bounds = json_data["bounds"];
 		boundry = fmt::format("POLYGON(({0} {1}, {2} {1}, {2} {3}, {0} {3}))",
@@ -308,16 +340,16 @@ bool Database::importData_Segment(const nlohmann::json& json_data)
 	}
 	catch (const SQLite::Exception& e)
 	{
-		catchSQLiteException(e, "creating rail segment");
+		catchSQLiteException(e, "creating railway");
 		return false;
 	}
 }
 
-bool Database::importData_RailLine(const nlohmann::json& json_data)
+bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 {
 	try
 	{
-		auto insert_statement = SQLite::Statement{ database, sql::rail_line_insert};
+		auto insert_statement = SQLite::Statement{ database, Railway_line::sql_insert.data()};
 
 		static auto id = std::string{};
 		static auto color = std::string{};
@@ -347,7 +379,8 @@ bool Database::importData_RailLine(const nlohmann::json& json_data)
 		bindTag(insert_statement, ":network", getTag(tags, "network"));
 		bindTag(insert_statement, ":operator", getTag(tags, "operator"));
 
-		static auto link = SQLite::Statement{ database, sql::rail_line_segment_insert };
+		//TODO: Railway line geometric line
+		/*static auto link = SQLite::Statement{ database, sql::rail_line_segment_insert };
 		for (const auto& segment : json_data["members"])
 		{
 			if (segment["type"] != "way")
@@ -385,7 +418,7 @@ bool Database::importData_RailLine(const nlohmann::json& json_data)
 		insert_statement.bind(":line", line);
 
 		auto boundry_statement = fmt::format("SELECT AsText(Envelope(GeomFromText(\'{}\', 4326)));", line);
-		insert_statement.bind(":boundry", database.execAndGet(boundry_statement).getText());
+		insert_statement.bind(":boundry", database.execAndGet(boundry_statement).getText());*/
 
 		insert_statement.exec();
 		insert_statement.reset();
@@ -393,16 +426,16 @@ bool Database::importData_RailLine(const nlohmann::json& json_data)
 	}
 	catch (const SQLite::Exception& e)
 	{
-		catchSQLiteException(e, "creating rail line");
+		catchSQLiteException(e, "creating railway line");
 		return false;
 	}
 }
 
-bool Database::importData_Station(const nlohmann::json& json_data)
+bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 {
 	try
 	{
-		static auto insert_statement = SQLite::Statement{ database, sql::rail_station_insert };
+		static auto insert_statement = SQLite::Statement{ database, Railway_station::sql_insert.data() };
 		static auto id = std::string{};
 		static auto point = std::string{};
 
@@ -452,7 +485,7 @@ bool Database::importData_Station(const nlohmann::json& json_data)
 	}
 	catch (const SQLite::Exception& e)
 	{
-		catchSQLiteException(e, "creating rail station");
+		catchSQLiteException(e, "creating railway station");
 		return false;
 	}
 }
@@ -491,7 +524,7 @@ void Database::splitIntoTiles()
 		else
 			statement = "SELECT ID, asGeoJSON(Boundry) FROM \"{}\";";
 
-		SQLite::Statement all_id(database, fmt::format(statement, type));
+		SQLite::Statement all_id(database, fmt::format(fmt::runtime(statement), type));
 		while (all_id.executeStep())
 		{
 			coords.clear();
@@ -511,13 +544,13 @@ void Database::splitIntoTiles()
 
 			for (const auto& tile : buffer)
 			{
-				database.exec(fmt::format(tables[tile], id));
+				database.exec(fmt::format(fmt::runtime(tables[tile]), id));
 			}
 		}
 	};
-	split("Segments");
-	split("Rail lines");
-	split("Rail stations");
+	split(Railway::sql_table_name);
+	split(Railway_line::sql_table_name);
+	split(Railway_station::sql_table_name);
 }
 
 std::vector<unsigned>& Database::getOccupiedTiles(std::vector<unsigned>& buffer, double _minlon, double _minlat, double _maxlon, double _maxlat)

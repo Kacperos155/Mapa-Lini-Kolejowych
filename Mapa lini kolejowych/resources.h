@@ -1,6 +1,5 @@
 #pragma once
 #include "Database.h"
-#include <fmt/core.h>
 #include <string_view>
 
 namespace resources

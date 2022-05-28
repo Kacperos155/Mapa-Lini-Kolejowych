@@ -29,9 +29,9 @@ private:
 
 	void calcMinMaxBoundry(double _minlon, double _minlat, double _maxlon, double _maxlat);
 	bool importData(const nlohmann::json& json_data);
-	bool importData_Segment(const nlohmann::json& json_data);
-	bool importData_RailLine(const nlohmann::json& json_data);
-	bool importData_Station(const nlohmann::json& json_data);
+	bool importData_Railway(const nlohmann::json& json_data);
+	bool importData_RailwayLine(const nlohmann::json& json_data);
+	bool importData_RailwayStation(const nlohmann::json& json_data);
 
 	void splitIntoTiles();
 	std::vector<unsigned>& getOccupiedTiles(std::vector<unsigned>& buffer, double _minlon, double _minlat, double _maxlon, double _maxlat);

@@ -25,6 +25,9 @@
     <Filter Include="Controllers">
       <UniqueIdentifier>{e1c4ec51-1769-4946-a583-6aea69331781}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Data Types">
+      <UniqueIdentifier>{fef706d0-52ca-4d19-a1ca-a3b7418df370}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -64,12 +67,6 @@
     </None>
     <None Include="Website\Leaflet.js">
       <Filter>Website</Filter>
-    </None>
-    <None Include="SQL\Tables.sql">
-      <Filter>SQL</Filter>
-    </None>
-    <None Include="SQL\Queries.sql">
-      <Filter>SQL</Filter>
     </None>
     <None Include="Overpass data\Overpass query.ql">
       <Filter>Overpass Data</Filter>
@@ -142,6 +139,21 @@
     </ClInclude>
     <ClInclude Include="utilities.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data Types\Database_Types.hpp">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Data Types\Railnode.hpp">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Data Types\Railway.hpp">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Data Types\Railway_line.hpp">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Data Types\Railway_station.hpp">
+      <Filter>Data Types</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

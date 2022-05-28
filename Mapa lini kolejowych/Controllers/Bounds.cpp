@@ -1,4 +1,5 @@
 #include "Bounds.h"
+#include <fmt/core.h>
 
 void Bounds::sendData_in_bounds(const drogon::HttpRequestPtr& req, drogon::AdviceCallback&& callback, double min_lon, double min_lat, double max_lon, double max_lat, int zoom)
 {

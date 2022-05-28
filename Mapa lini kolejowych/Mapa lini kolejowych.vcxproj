@@ -196,8 +196,6 @@
     <None Include="Overpass data\OSM Rail lines data.json" />
     <None Include="Overpass data\Overpass query.ql" />
     <None Include="SQL\GeoJSON.sql" />
-    <None Include="SQL\Queries.sql" />
-    <None Include="SQL\Tables.sql" />
     <None Include="Website\Cookies.js" />
     <None Include="Website\green.css" />
     <None Include="Website\grey.css" />
@@ -216,6 +214,11 @@
     <ClInclude Include="Controllers\Bounds.h" />
     <ClInclude Include="Controllers\findElement.h" />
     <ClInclude Include="Controllers\getElement.h" />
+    <ClInclude Include="Data Types\Database_Types.hpp" />
+    <ClInclude Include="Data Types\Railnode.hpp" />
+    <ClInclude Include="Data Types\Railway.hpp" />
+    <ClInclude Include="Data Types\Railway_line.hpp" />
+    <ClInclude Include="Data Types\Railway_station.hpp" />
     <ClInclude Include="Database.h" />
     <ClInclude Include="GeoJSON_conversion.h" />
     <ClInclude Include="resources.h" />

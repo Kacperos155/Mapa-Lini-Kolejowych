@@ -146,11 +146,11 @@ const std::string& GeoJSON::allRailLines(SQLite::Database& database, bool refres
 auto IDsFromTiles(const std::string_view type, std::vector<unsigned>& tiles)
 {
 	const auto statement_fmt = fmt::format(R"(SELECT ID FROM "tile_{}_{{}}")", type);
-	std::string statement = fmt::format(statement_fmt, tiles[0]);
+	std::string statement = fmt::format(fmt::runtime(statement_fmt), tiles[0]);
 
 	for (int i = 1; i < tiles.size(); ++i)
 	{
-		statement += fmt::format(" UNION {}", fmt::format(statement_fmt, tiles[i]));
+		statement += fmt::format(" UNION {}", fmt::format(fmt::runtime(statement_fmt), tiles[i]));
 	}
 	return statement;
 }
