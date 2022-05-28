@@ -1,6 +1,7 @@
 #include "resources.h"
 #include "Overpass data/Overpass query.ql"
 #include <vector>
+#include <array>
 #include <string_view>
 #include <algorithm>
 #include <filesystem>
@@ -12,29 +13,29 @@
 #include <tinyfiledialogs/tinyfiledialogs.h>
 #include <cpr/cpr.h>
 
-const std::filesystem::path database_path{ "Rail lines database.db" };
-const std::filesystem::path OSM_data_path{ "Overpass Data/OSM Rail lines data.json" };
-const std::filesystem::path OSM_data_test_path{ "Overpass Data/OSM Rail lines data - pomorskie.json" };
-
-bool databaseFromFiles(std::string_view app_directory)
+std::filesystem::path chooseImportFile(std::filesystem::path const& app_directory)
 {
-	const char* extension_filter[1] = { "*.json" };
-	auto json_data_str = tinyfd_openFileDialog("Rail lines data", app_directory.data(), 1, extension_filter, "JSON file", 0);
+	std::array<char const*, 1> extension_filter = { "*.json" };
+	auto json_data_str = tinyfd_openFileDialog("Rail lines data", app_directory.string().c_str(), 1, extension_filter.data(), "JSON file", 0);
 	if (json_data_str == nullptr)
-		return false;
-	auto json_data = std::filesystem::path{ json_data_str };
+		return {};
+	return { json_data_str };
+}
 
-	if (std::filesystem::exists(json_data))
+bool databaseFromFile(std::filesystem::path const& import_file)
+{
+	if (!std::filesystem::exists(import_file))
 	{
-		auto& DB = resources::getDatabase();
-		if (DB.importFromFile(json_data))
-		{
-			DB.saveToFile(database_path);
-			fmt::print("Database succesfuly created from provided file. \n");
-			return true;
-		}
+		fmt::print(fmt::fg(fmt::color::red), "Database could not be created from provided file: {}\n", std::filesystem::absolute(import_file).string());
+		return false;
 	}
-	fmt::print("Database could not be created from provided files! \n");
+
+	if (auto& DB = resources::getDatabase(); DB.importFromFile(import_file))
+	{
+		DB.saveToFile(resources::database_path);
+		fmt::print("Database succesfuly created from provided file. \n");
+		return true;
+	}
 	return false;
 }
 
@@ -49,15 +50,13 @@ bool databaseFromOSMserver(std::string_view country_tag)
 	auto response = cpr::Get(cpr::Url{ "https://overpass-api.de/api/status" });
 	if (!cpr::status::is_success(response.status_code))
 		return false;
-	fmt::print("Overpass API status: \n");
+	fmt::print("Current Overpass API status: \n");
 	fmt::print(fmt::fg(fmt::color::yellow), response.text);
-	fmt::print("\nPlease be patient. Downloading data could take from 5 to 30 minutes. \n");
+	fmt::print("\nPlease be patient. Downloading data could take up to 30 minutes. \n");
 
 	auto query = std::string(overpass_query);
-	bool tests = false;
-	if (country_tag == "test")
+	if (country_tag == "test" || country_tag == "[test]")
 	{
-		tests = true;
 		query = overpass_query_pomorskie;
 	}
 	else if (country_tag != "PL")
@@ -66,9 +65,13 @@ bool databaseFromOSMserver(std::string_view country_tag)
 		if (it == std::string::npos)
 			return false;
 		query[it] = country_tag[0];
-		query[++it] = country_tag[1];
+		query[it + 1] = country_tag[1];
 	}
 	query = "https://overpass-api.de/api/interpreter?data=" + cpr::util::urlEncode(query);
+
+	auto output_path = std::filesystem::path{ fmt::format("Overpass data\\{}.json", country_tag) };
+	if (!std::filesystem::exists(output_path.parent_path()))
+		std::filesystem::create_directories(output_path.parent_path());
 
 	auto download_start = std::chrono::high_resolution_clock::now();
 	response = cpr::Get(cpr::Url(std::move(query)));
@@ -82,21 +85,12 @@ bool databaseFromOSMserver(std::string_view country_tag)
 	fmt::print(fmt::fg(fmt::color::green), "Successful download from Overpass API after {}s\n",
 		std::chrono::duration_cast<std::chrono::seconds>(download_duration).count());
 
-	if (!tests)
-	{
-		std::ofstream output_file(OSM_data_path);
-		output_file << response.text;
-	}
-	else
-	{
-		std::ofstream output_file(OSM_data_test_path);
-		output_file << response.text;
-	}
+	std::ofstream output_file(output_path);
+	output_file << response.text;
 
-	auto& DB = resources::getDatabase();
-	if (DB.importFromString(response.text))
+	if (auto& DB = resources::getDatabase(); DB.importFromString(response.text))
 	{
-		DB.saveToFile(database_path);
+		DB.saveToFile(resources::database_path);
 		fmt::print("Database succesfuly created from OpenStreetMap server. \n");
 		return true;
 	}
@@ -104,19 +98,10 @@ bool databaseFromOSMserver(std::string_view country_tag)
 	return false;
 }
 
-bool resources::checkDatabaseExistence(std::string_view app_directory)
+bool resources::checkDatabaseExistence(std::filesystem::path const& app_directory)
 {
 	if (std::filesystem::exists(database_path))
 		resources::getDatabase().loadFromFile(database_path);
-	else if (std::filesystem::exists(OSM_data_path))
-	{
-		if (resources::getDatabase().importFromFile(OSM_data_path))
-		{
-			resources::getDatabase().saveToFile(database_path);
-			fmt::print("Database succesfuly created from provided file. \n");
-			return true;
-		}
-	}
 	else
 	{
 		return databaseRebuild(app_directory);
@@ -124,14 +109,21 @@ bool resources::checkDatabaseExistence(std::string_view app_directory)
 	return true;
 }
 
-bool resources::databaseRebuild(std::string_view app_directory)
+bool resources::databaseRebuild(std::filesystem::path const& import_data)
 {
-	if (tinyfd_messageBox("No database file",
-		"There is no database file in application directory. \n" \
-		"Do you have a JSON file with rail data? \n\n",
-		"yesno", "warning", 0))
+	if (std::filesystem::is_directory(import_data))
 	{
-		return databaseFromFiles(app_directory);
+		if (tinyfd_messageBox("No database file",
+			"There is no database file in application directory. \n" \
+			"Do you have a JSON file with rail data? \n\n",
+			"yesno", "warning", 0))
+		{
+			return databaseFromFile(chooseImportFile(import_data));
+		}
+	}
+	else
+	{
+		return databaseFromFile(import_data);
 	}
 
 	if (tinyfd_messageBox("Downloading data from OpenStreetMap server",
@@ -139,7 +131,8 @@ bool resources::databaseRebuild(std::string_view app_directory)
 		"This can take a very long time.",
 		"yesno", "warning", 0))
 	{
-		const char* country_tag = tinyfd_inputBox("Country tag", "Please provide a country name using 2 characters (ISO3166-1:alpha2 standard)", "PL");
+		const char* country_tag = tinyfd_inputBox("Country tag",
+			"Please provide a country name using 2 characters (ISO3166-1:alpha2 standard)\nor type [test] to get smaller test data", "PL");
 		if (country_tag == nullptr)
 			return false;
 

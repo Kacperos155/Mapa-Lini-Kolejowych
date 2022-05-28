@@ -68,15 +68,6 @@
     <None Include="Website\Leaflet.js">
       <Filter>Website</Filter>
     </None>
-    <None Include="Overpass data\Overpass query.ql">
-      <Filter>Overpass Data</Filter>
-    </None>
-    <None Include="Overpass data\OSM Rail lines data.json">
-      <Filter>Overpass Data</Filter>
-    </None>
-    <None Include="Overpass data\OSM Rail lines data - pomorskie.json">
-      <Filter>Overpass Data</Filter>
-    </None>
     <None Include="SQL\GeoJSON.sql">
       <Filter>SQL</Filter>
     </None>
@@ -114,6 +105,12 @@
       <Filter>Website</Filter>
     </None>
     <None Include="..\README.md" />
+    <None Include="Overpass data\Overpass query.ql">
+      <Filter>Overpass Data</Filter>
+    </None>
+    <None Include="Overpass data\test.json">
+      <Filter>Overpass Data</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">

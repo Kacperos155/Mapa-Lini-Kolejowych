@@ -67,7 +67,7 @@ void Database::loadFromFile(const std::filesystem::path& database_path)
 		fmt::print("{}\n", e.what());
 	}
 
-	SQLite::Statement infos(database, "SELECT * FROM Info");
+	SQLite::Statement infos(database, fmt::format("SELECT * FROM {}", Variable::sql_table_name));
 	while (infos.executeStep())
 	{
 		std::string_view key = infos.getColumn(0).getText();
@@ -298,7 +298,7 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 		if (!bindTag(insert_statement, ":line_name", getTag(tags, "ref")))
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid segment ({}): Line number is empty \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway ({}): Line number is empty \n", id);
 			return false;
 		}
 		bindTag(insert_statement, ":usage", getTag(tags, "usage"));
@@ -372,7 +372,7 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 		if (!bindTag(insert_statement, ":number", getTag(tags, "ref")))
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid rail line ({}): Line number is empty \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway line ({}): Line number is empty \n", id);
 			return false;
 		}
 		bindTag(insert_statement, ":name", getTag(tags, "name"));
@@ -439,6 +439,7 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 		static auto id = std::string{};
 		static auto point = std::string{};
 
+
 		id = json_data["id"].dump();
 		insert_statement.bind(":id", id);
 
@@ -447,7 +448,7 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 		if(!bindTag(insert_statement, ":name", getTag(tags, "name")))
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid rail station ({}): Name is empty \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Name is empty \n", id);
 			return false;
 		}
 
@@ -474,7 +475,7 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 		if (!type)
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid rail station ({}): Type is empty \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Type is empty \n", id);
 			return false;
 		}
 

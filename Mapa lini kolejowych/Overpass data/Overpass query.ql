@@ -1,4 +1,4 @@
-auto overpass_query = R"ql(
+constexpr auto overpass_query = R"ql(
 [out:json][timeout:1800];
 area["ISO3166-1:alpha2"="PL"][admin_level=2] -> .country;
 (
@@ -20,7 +20,7 @@ area["ISO3166-1:alpha2"="PL"][admin_level=2] -> .country;
 way(r.rail_lines).tracks -> .tracks;
 relation(bw.tracks) -> .rail_lines;
 
-.tracks out qt tags geom;
+.tracks out qt body geom;
 .rail_lines out qt body;
 .stations out qt body;
 )ql";
@@ -28,7 +28,7 @@ relation(bw.tracks) -> .rail_lines;
 
 
 //Smaller query for tests
-auto overpass_query_pomorskie = R"ql(
+constexpr auto overpass_query_pomorskie = R"ql(
 [out:json][timeout:1800];
 area["ISO3166-2"="PL-22"][admin_level=4] -> .country;
 (
@@ -50,7 +50,7 @@ area["ISO3166-2"="PL-22"][admin_level=4] -> .country;
 way(r.rail_lines).tracks -> .tracks;
 relation(bw.tracks) -> .rail_lines;
 
-.tracks out qt tags geom;
+.tracks out qt body geom;
 .rail_lines out qt body;
 .stations out qt body;
 )ql";

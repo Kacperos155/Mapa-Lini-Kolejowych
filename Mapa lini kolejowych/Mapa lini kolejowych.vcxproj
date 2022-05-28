@@ -192,9 +192,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
-    <None Include="Overpass data\OSM Rail lines data - pomorskie.json" />
-    <None Include="Overpass data\OSM Rail lines data.json" />
     <None Include="Overpass data\Overpass query.ql" />
+    <None Include="Overpass data\test.json" />
     <None Include="SQL\GeoJSON.sql" />
     <None Include="Website\Cookies.js" />
     <None Include="Website\green.css" />

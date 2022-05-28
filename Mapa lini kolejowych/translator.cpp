@@ -88,7 +88,7 @@ void createTranslationFile(const std::filesystem::path& website_path, const std:
 	fmt::print("Created translation file:{}\n", translation_path.string());
 }
 
-void translatePage(const std::filesystem::path& website_path, const std::filesystem::path& translation_path)
+void translatePage(const std::filesystem::path& website_path, const std::filesystem::path& translation_path, std::string_view language_name)
 {
 	auto orginal_website = website_path.parent_path().parent_path() / website_path.filename();
 	std::stringstream ss;
@@ -130,7 +130,7 @@ void translatePage(const std::filesystem::path& website_path, const std::filesys
 		it = end_it + 2;
 	}
 	output << buffer.substr(it);
-	fmt::print("Website {} is translated \n", website_path.string());
+	fmt::print("Website \"{}\" has been translated to {}\n", website_path.string(), language_name);
 }
 
 bool utilities::translate(const std::filesystem::path& directory)
@@ -164,7 +164,8 @@ bool utilities::translate(const std::filesystem::path& directory)
 			continue;
 		}
 
-		auto& tag = lang["tag"];
+		auto& language_name = lang["name"].get_ref<std::string const&>();
+		auto& tag = lang["tag"].get_ref<std::string const&>();
 		auto tag_dir = directory / tag;
 		if (!std::filesystem::exists(tag_dir))
 		{
@@ -172,17 +173,17 @@ bool utilities::translate(const std::filesystem::path& directory)
 		}
 		for (const auto& website : languages["websites"])
 		{
-			const auto& website_str = website.get_ref<const std::string&>();
-			auto website_path = tag_dir / website_str;
-			auto translation_path = website_path.string() + ".lang";
+			const auto website_path = std::filesystem::path{ website.get_ref<std::string const&>() };
+			auto translated_website_path = tag_dir / website_path;
+			auto translation_path = std::filesystem::path{ translated_website_path.string() + ".lang" };
 
 			if (std::filesystem::exists(translation_path))
 			{
-				translatePage(website_path, translation_path);
+				translatePage(translated_website_path, translation_path, language_name);
 			}
 			else
 			{
-				createTranslationFile(directory / website_str, translation_path);
+				createTranslationFile(directory / website_path, translation_path);
 			}
 		}
 	}
