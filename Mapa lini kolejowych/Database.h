@@ -5,6 +5,8 @@
 #include <string_view>
 #include <nlohmann/json.hpp>
 
+#include "BoundingBox.hpp"
+
 class Database
 {
 public:
@@ -17,7 +19,7 @@ public:
 	void saveToFile(const std::filesystem::path& database_path);
 	const std::string& find(std::string_view query, std::string_view type = "rail_station", unsigned limit = 5);
 	const std::string& getGeoJSON(std::string_view ID, std::string_view type = "rail_station");
-	const std::string& getGeoJSON(double min_lon, double min_lat, double max_lon, double max_lat, int zoom = 20);
+	const std::string& getGeoJSON(BoundingBox bounds, int zoom = 20);
 
 private:
 	std::string timestamp;

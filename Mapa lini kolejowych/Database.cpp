@@ -148,11 +148,10 @@ const std::string& Database::getGeoJSON(std::string_view ID, std::string_view ty
 	return buffer;
 }
 
-const std::string& Database::getGeoJSON(double min_lon, double min_lat, double max_lon, double max_lat, int zoom)
+const std::string& Database::getGeoJSON(BoundingBox bounds, int zoom)
 {
 	static std::string buffer{};
 	auto features_collection = GeoJSON::createFeatureCollection();
-	std::vector<unsigned> tiles;
 
 	//Only lines - cache
 	if (zoom < 10)
@@ -162,21 +161,19 @@ const std::string& Database::getGeoJSON(double min_lon, double min_lat, double m
 	//Lines + main rail stations
 	else if (zoom == 10)
 	{
-		getOccupiedTiles(tiles, min_lon, min_lat, max_lon, max_lat);
-		GeoJSON::boundingRailLines(database, features_collection, tiles);
-		GeoJSON::boundingSegments(database, features_collection, tiles);
-		GeoJSON::boundingMainRailStations(database, features_collection, tiles);
+		GeoJSON::boundingRailLines(database, features_collection, bounds);
+		GeoJSON::boundingSegments(database, features_collection, bounds);
+		GeoJSON::boundingMainRailStations(database, features_collection, bounds);
 	}
 	//Lines + rail stations
 	else if (zoom >= 11)
 	{
-		getOccupiedTiles(tiles, min_lon, min_lat, max_lon, max_lat);
-		GeoJSON::boundingRailLines(database, features_collection, tiles);
-		GeoJSON::boundingSegments(database, features_collection, tiles);
-		GeoJSON::boundingRailStations(database, features_collection, tiles);
+		GeoJSON::boundingRailLines(database, features_collection, bounds);
+		GeoJSON::boundingSegments(database, features_collection, bounds);
+		GeoJSON::boundingRailStations(database, features_collection, bounds);
 	}
 
-	fmt::print("Elements: {} Tiles: {}\n", features_collection["features"].size(), tiles);
+	fmt::print("Elements: {}\n", features_collection["features"].size());
 	buffer = features_collection.dump(1);
 	return buffer;
 }

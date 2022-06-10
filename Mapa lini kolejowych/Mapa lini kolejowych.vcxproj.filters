@@ -152,5 +152,8 @@
     <ClInclude Include="Data Types\Railway_station.hpp">
       <Filter>Data Types</Filter>
     </ClInclude>
+    <ClInclude Include="BoundingBox.hpp">
+      <Filter>Data Types</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -29,7 +29,9 @@ nlohmann::json getX(SQLite::Statement& sql_statement)
 	auto& properties = obj["properties"];
 	properties["id"] = sql_statement.getColumn("ID").getText();
 
-	obj["geometry"] = nlohmann::json::parse(sql_statement.getColumn("GeoJson").getText());
+	std::string_view GeoJson = sql_statement.getColumn("GeoJson").getText();
+	if(!GeoJson.empty())
+		obj["geometry"] = nlohmann::json::parse(sql_statement.getColumn("GeoJson").getText());
 	return obj;
 }
 
@@ -39,7 +41,7 @@ nlohmann::json GeoJSON::getSegment(SQLite::Statement& sql_statement)
 	auto obj = getX(sql_statement);
 	auto& properties = obj["properties"];
 
-	properties["number"] = sql_statement.getColumn("Line number").getText();
+	properties["number"] = sql_statement.getColumn("Line name").getText();
 
 	if (auto column = sql_statement.getColumn("Usage"); !column.isNull())
 		properties["usage"] = column.getText();
@@ -47,7 +49,7 @@ nlohmann::json GeoJSON::getSegment(SQLite::Statement& sql_statement)
 	if (auto column = sql_statement.getColumn("Max speed"); !column.isNull())
 		properties["max_speed"] = column.getText();
 
-	if (auto column = sql_statement.getColumn("Voltage"); !column.isNull())
+	if (auto column = sql_statement.getColumn("Electrified"); !column.isNull())
 		properties["voltage"] = column.getText();
 	
 	if (auto column = sql_statement.getColumn("Disusage"); !column.isNull())
@@ -143,61 +145,33 @@ const std::string& GeoJSON::allRailLines(SQLite::Database& database, bool refres
 	return buffer;
 }
 
-auto IDsFromTiles(const std::string_view type, std::vector<unsigned>& tiles)
+nlohmann::json& GeoJSON::boundingSegments(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds)
 {
-	const auto statement_fmt = fmt::format(R"(SELECT ID FROM "tile_{}_{{}}")", type);
-	std::string statement = fmt::format(fmt::runtime(statement_fmt), tiles[0]);
-
-	for (int i = 1; i < tiles.size(); ++i)
-	{
-		statement += fmt::format(" UNION {}", fmt::format(fmt::runtime(statement_fmt), tiles[i]));
-	}
-	return statement;
-}
-
-nlohmann::json& GeoJSON::boundingSegments(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles)
-{
-	if (tiles.empty())
-		return features_collection;
-
-	auto ids = IDsFromTiles("Segments", tiles);
-	SQLite::Statement query(database, fmt::format(sql::GeoJson::segments_from_tiles, ids));
+	SQLite::Statement query(database, fmt::format(sql::GeoJson::segments_from_tiles, bounds.getPolygon()));
 
 	fillFeatureCollection(query, features_collection, getSegment);
 	return features_collection;
 }
 
-nlohmann::json& GeoJSON::boundingRailLines(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles)
+nlohmann::json& GeoJSON::boundingRailLines(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds)
 {
-	if (tiles.empty())
-		return features_collection;
-
-	auto ids = IDsFromTiles("Rail lines", tiles);
-	SQLite::Statement query(database, fmt::format(sql::GeoJson::lines_from_tiles, ids));
+	SQLite::Statement query(database, fmt::format(sql::GeoJson::lines_from_tiles, bounds.getPolygon()));
 
 	fillFeatureCollection(query, features_collection, getRailLine);
 	return features_collection;
 }
 
-nlohmann::json& GeoJSON::boundingMainRailStations(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles)
+nlohmann::json& GeoJSON::boundingMainRailStations(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds)
 {
-	if (tiles.empty())
-		return features_collection;
-
-	auto ids = IDsFromTiles("Rail stations", tiles);
-	SQLite::Statement query(database, fmt::format(sql::GeoJson::main_stations_from_tiles, ids));
+	SQLite::Statement query(database, fmt::format(sql::GeoJson::main_stations_from_tiles, bounds.getPolygon()));
 
 	fillFeatureCollection(query, features_collection, getRailStation);
 	return features_collection;
 }
 
-nlohmann::json& GeoJSON::boundingRailStations(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles)
+nlohmann::json& GeoJSON::boundingRailStations(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds)
 {
-	if (tiles.empty())
-		return features_collection;
-
-	auto ids = IDsFromTiles("Rail stations", tiles);
-	SQLite::Statement query(database, fmt::format(sql::GeoJson::stations_from_tiles, ids));
+	SQLite::Statement query(database, fmt::format(sql::GeoJson::stations_from_tiles, bounds.getPolygon()));
 
 	fillFeatureCollection(query, features_collection, getRailStation);
 	return features_collection;

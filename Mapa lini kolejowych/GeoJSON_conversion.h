@@ -3,6 +3,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "BoundingBox.hpp"
+
 namespace GeoJSON
 {
 	nlohmann::json createFeatureCollection();
@@ -18,8 +20,8 @@ namespace GeoJSON
 
 	const std::string& allRailLines(SQLite::Database& database, bool refresh = false);
 	
-	nlohmann::json& boundingSegments(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles);
-	nlohmann::json& boundingRailLines(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles);
-	nlohmann::json& boundingMainRailStations(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles);
-	nlohmann::json& boundingRailStations(SQLite::Database& database, nlohmann::json& features_collection, std::vector<unsigned>& tiles);
+	nlohmann::json& boundingSegments(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds);
+	nlohmann::json& boundingRailLines(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds);
+	nlohmann::json& boundingMainRailStations(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds);
+	nlohmann::json& boundingRailStations(SQLite::Database& database, nlohmann::json& features_collection, BoundingBox& bounds);
 }

@@ -1,5 +1,6 @@
 #include "Bounds.h"
 #include <fmt/core.h>
+#include "../BoundingBox.hpp"
 
 void Bounds::sendData_in_bounds(const drogon::HttpRequestPtr& req, drogon::AdviceCallback&& callback, double min_lon, double min_lat, double max_lon, double max_lat, int zoom)
 {
@@ -8,7 +9,8 @@ void Bounds::sendData_in_bounds(const drogon::HttpRequestPtr& req, drogon::Advic
 	auto response = drogon::HttpResponse::newHttpResponse();
 	response->setContentTypeString("application/json");
 
-	auto& data = database.getGeoJSON(min_lat, min_lon, max_lat, max_lon, zoom);
+
+	auto& data = database.getGeoJSON(BoundingBox(min_lon, min_lat, max_lon, max_lat), zoom);
 	response->setBody(data);
 
 	auto duration = std::chrono::high_resolution_clock::now() - start;

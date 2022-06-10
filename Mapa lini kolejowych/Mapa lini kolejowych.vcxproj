@@ -210,6 +210,7 @@
     <None Include="Website\search.js" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoundingBox.hpp" />
     <ClInclude Include="Controllers\Bounds.h" />
     <ClInclude Include="Controllers\findElement.h" />
     <ClInclude Include="Controllers\getElement.h" />
