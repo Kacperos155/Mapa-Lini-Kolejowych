@@ -11,7 +11,7 @@ struct Railway_line
 	std::string network{};
 	std::string line_operator{};
 
-	std::array<char, 6> color;
+	std::array<char, 6> color{};
 
 	std::string from{};
 	std::string via{};

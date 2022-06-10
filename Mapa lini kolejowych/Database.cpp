@@ -33,9 +33,9 @@ Database::Database(const std::filesystem::path& database_path)
 void Database::showInfo()
 {
 	std::map<uint8_t, unsigned> node_connections;
-	for (const auto& node : railnodes)
+	for (const auto& [id, node] : railnodes)
 	{
-		auto connections = static_cast<uint8_t>(node.second.neighbours.size());
+		auto connections = static_cast<uint8_t>(node.neighbours.size());
 		if (node_connections.contains(connections))
 		{
 			++node_connections.at(connections);
@@ -49,17 +49,17 @@ void Database::showInfo()
 
 	fmt::print("\t Timestamp: {}\n", timestamp);
 	fmt::print(fmt::fg(fmt::color::aqua), "\t Rail nodes: {}\n", railnodes.size());
-	for (const auto& connection : node_connections)
+	for (const auto& [connections, counter] : node_connections)
 	{
-		fmt::print(fmt::fg(fmt::color::alice_blue), "\t\t With {} connections: {}\n", connection.first, connection.second);
+		fmt::print(fmt::fg(fmt::color::alice_blue), "\t\t With {} connections: {}\n", connections, counter);
 	}
 
 	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway::sql_table_name, railways.size());
 	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_line::sql_table_name, raillines.size());
 	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_station::sql_table_name, railstations.size());
 
-	fmt::print("\t Min Lat: {:.2f}, Min Lon: {:.2f}\n", minlat, minlon);
-	fmt::print("\t Max Lat: {:.2f}, Max Lon: {:.2f}\n", maxlat, maxlon);
+	fmt::print("\t Min Lat: {:.2f}, Min Lon: {:.2f}\n", max_bounding.min_lat, max_bounding.min_lon);
+	fmt::print("\t Max Lat: {:.2f}, Max Lon: {:.2f}\n", max_bounding.max_lat, max_bounding.max_lon);
 }
 
 bool Database::importFromString(std::string_view json_string)
@@ -108,13 +108,13 @@ void Database::loadFromFile(const std::filesystem::path& database_path)
 		if (key == "timestamp")
 			timestamp = value.getText();
 		else if (key == "minlon")
-			minlon = value.getDouble();
+			max_bounding.min_lon = value.getDouble();
 		else if (key == "minlat")
-			minlat = value.getDouble();
+			max_bounding.min_lat = value.getDouble();
 		else if (key == "maxlon")
-			maxlon = value.getDouble();
+			max_bounding.max_lon = value.getDouble();
 		else if (key == "maxlat")
-			maxlat = value.getDouble();
+			max_bounding.max_lat = value.getDouble();
 	}
 	showInfo();
 }
@@ -135,7 +135,7 @@ const std::string& Database::find(std::string_view query, std::string_view type,
 	}
 	else if (type != "rail_station")
 	{
-		throw "Wrong type";
+		throw std::invalid_argument("Wrong type");
 	}
 
 	nlohmann::json j;
@@ -173,7 +173,7 @@ const std::string& Database::getGeoJSON(std::string_view ID, std::string_view ty
 	}
 	else
 	{
-		throw std::logic_error("Wrong type");
+		throw std::invalid_argument("Wrong type");
 	}
 	return buffer;
 }
@@ -208,22 +208,22 @@ const std::string& Database::getGeoJSON(BoundingBox bounds, int zoom)
 	return buffer;
 }
 
-const std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
+std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
 {
 	static Routing Router{};
 
 	Railnode* start{};
 	Railnode* end{};
 
-	auto getNode = [&](Railnode* variable, int64_t ID)
+	auto getNode = [&](Railnode*& variable, int64_t ID)
 	{
 		try
 		{
 			variable = &railnodes.at(ID);
 		}
-		catch (std::exception& e)
+		catch (const std::out_of_range& e)
 		{
-			fmt::print(fmt::fg(fmt::color::red), "ERROR: There is no node with ID: {}\n", ID);
+			fmt::print(fmt::fg(fmt::color::red), "ERROR: There is no node with ID: {}\n\t{}\n", ID, e.what());
 		}
 	};
 
@@ -241,10 +241,10 @@ const std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
 
 void Database::calcMinMaxBoundry(double _minlon, double _minlat, double _maxlon, double _maxlat)
 {
-	minlon = std::min(minlon, _minlon);
-	minlat = std::min(minlat, _minlat);
-	maxlon = std::max(maxlon, _maxlon);
-	maxlat = std::max(maxlat, _maxlat);
+	max_bounding.min_lon = std::min(max_bounding.min_lon, _minlon);
+	max_bounding.min_lat = std::min(max_bounding.min_lat, _minlat);
+	max_bounding.max_lon = std::max(max_bounding.max_lon, _maxlon);
+	max_bounding.max_lat = std::max(max_bounding.max_lat, _maxlat);
 }
 
 bool Database::importData(const nlohmann::json& json_data)
@@ -295,12 +295,6 @@ bool Database::importData(const nlohmann::json& json_data)
 		{
 			if (!importData_RailwayStation(element))
 				++invalid;
-			else
-			{
-				const auto lat = element["lat"].get<double>();
-				const auto lon = element["lon"].get<double>();
-				calcMinMaxBoundry(lon, lat, lon, lat);
-			}
 		}
 	}
 
@@ -316,10 +310,10 @@ bool Database::importData(const nlohmann::json& json_data)
 		};
 		timestamp = json_data["osm3s"]["timestamp_osm_base"].get<std::string>();
 		insert_info("timestamp", timestamp);
-		insert_info("minlon", minlon);
-		insert_info("minlat", minlat);
-		insert_info("maxlon", maxlon);
-		insert_info("maxlat", maxlat);
+		insert_info("minlon", max_bounding.min_lon);
+		insert_info("minlat", max_bounding.min_lat);
+		insert_info("maxlon", max_bounding.max_lon);
+		insert_info("maxlat", max_bounding.max_lat);
 	}
 	catch (const SQLite::Exception& e)
 	{
@@ -327,7 +321,6 @@ bool Database::importData(const nlohmann::json& json_data)
 		return false;
 	}
 
-	//splitIntoTiles();
 	transaction.commit();
 
 	fmt::print("Database created: \n");
@@ -363,7 +356,7 @@ bool Database::importData_RailNode(const nlohmann::json::array_t& ids, const nlo
 		nodes[i] = &railnodes.at(id);
 	}
 
-	for (auto i = 0; i < nodes.size(); ++i)
+	for (std::size_t i = 0; i < nodes.size(); ++i)
 	{
 		if (0 < i)
 			nodes[i]->neighbours.push_back(nodes[i - 1]);
@@ -407,7 +400,7 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 
 		if (auto usage = bindTag<std::string>(insert_statement, ":usage", tags, "usage"); usage != nullptr)
 		{
-			;// TODO railway.usage = *usage;
+			railway.usage = Railway::Usage::Unknown;// TODO railway.usage = *usage
 		}
 
 		if (auto max_speed = bindTag<std::string>(insert_statement, ":max_speed", tags, "maxspeed"))
@@ -687,96 +680,6 @@ std::string Database::testRoute()
 		catchSQLiteException(e, "creating result of finding connection");
 		return {};
 	}
-}
-
-void Database::splitIntoTiles()
-{
-	auto distance_lon = std::abs(static_cast<int>(maxlon) - static_cast<int>(minlon));
-	auto distance_lat = std::abs(static_cast<int>(maxlat) - static_cast<int>(minlat));
-
-	auto tiles_lon = static_cast<int>(distance_lon) + 1;
-	auto tiles_lat = static_cast<int>(distance_lat) + 1;
-	auto tiles_number = tiles_lat * tiles_lon;
-
-	auto tiles_for_type = [&](std::string_view input_table)
-	{
-		std::vector<std::string> table_names;
-		table_names.reserve(tiles_number);
-		for (int i = 0; i < tiles_number; ++i)
-		{
-			auto table_name = fmt::format("tile_{}_{}", input_table, i);
-			database.exec(fmt::format(R"(DROP TABLE IF EXISTS "{0}"; CREATE TABLE "{0}" ("ID" TEXT PRIMARY KEY);)",
-				table_name));
-			table_names.push_back(fmt::format(R"(INSERT INTO "{}" VALUES ({{}});)", table_name));
-		}
-		return table_names;
-	};
-	std::vector<unsigned> buffer;
-
-	auto split = [&](std::string_view type) {
-		auto tables = tiles_for_type(type);
-		std::vector<std::pair<double, double>> coords;
-
-		std::string_view statement{};
-		if (type == "Rail stations")
-			statement = "SELECT ID, asGeoJSON(Point) FROM \"{}\";";
-		else
-			statement = "SELECT ID, asGeoJSON(Boundry) FROM \"{}\";";
-
-		SQLite::Statement all_id(database, fmt::format(fmt::runtime(statement), type));
-		while (all_id.executeStep())
-		{
-			coords.clear();
-			auto id = all_id.getColumn(0).getText();
-			auto geojson = nlohmann::json::parse(all_id.getColumn(1).getText());
-
-			if (type == "Rail stations")
-			{
-				std::pair<double, double> coord = geojson["coordinates"];
-				getOccupiedTiles(buffer, coord.first, coord.second, coord.first, coord.second);
-			}
-			else
-			{
-				coords = geojson["coordinates"][0];
-				getOccupiedTiles(buffer, coords[0].first, coords[0].second, coords[2].first, coords[2].second);
-			}
-
-			for (const auto& tile : buffer)
-			{
-				database.exec(fmt::format(fmt::runtime(tables[tile]), id));
-			}
-		}
-	};
-	split(Railway::sql_table_name);
-	split(Railway_line::sql_table_name);
-	split(Railway_station::sql_table_name);
-}
-
-std::vector<unsigned>& Database::getOccupiedTiles(std::vector<unsigned>& buffer, double _minlon, double _minlat, double _maxlon, double _maxlat)
-{
-	buffer.clear();
-	auto tiles_lon = std::abs(static_cast<int>(maxlon) - static_cast<int>(minlon)) + 1;
-
-	_minlon = std::max(_minlon, minlon);
-	_minlat = std::max(_minlat, minlat);
-	_maxlon = std::min(_maxlon, maxlon);
-	_maxlat = std::min(_maxlat, maxlat);
-
-	auto start_lon = std::abs(static_cast<int>(_minlon) - static_cast<int>(minlon));
-	auto start_lat = std::abs(static_cast<int>(_minlat) - static_cast<int>(minlat));
-	auto end_lon = std::abs(static_cast<int>(_maxlon) - static_cast<int>(minlon));
-	auto end_lat = std::abs(static_cast<int>(_maxlat) - static_cast<int>(minlat));
-
-	for (auto y = start_lat; y <= end_lat; ++y)
-	{
-		for (auto x = start_lon; x <= end_lon; ++x)
-		{
-			auto i = y * tiles_lon + x;
-			buffer.push_back(i);
-		}
-	}
-
-	return buffer;
 }
 
 void catchSQLiteException(const SQLite::Exception& e, std::string_view when, std::string_view dump)
