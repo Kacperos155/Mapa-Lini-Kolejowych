@@ -179,16 +179,19 @@
     <ClCompile Include="Controllers\Bounds.cpp" />
     <ClCompile Include="Controllers\findElement.cpp" />
     <ClCompile Include="Controllers\getElement.cpp" />
+    <ClCompile Include="Controllers\routing.cpp" />
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="database_creation.cpp" />
     <ClCompile Include="GeoJSON_conversion.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="resources.cpp" />
+    <ClCompile Include="Router.cpp" />
     <ClCompile Include="Server.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="translator.cpp" />
+    <ClCompile Include="utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
@@ -214,6 +217,7 @@
     <ClInclude Include="Controllers\Bounds.h" />
     <ClInclude Include="Controllers\findElement.h" />
     <ClInclude Include="Controllers\getElement.h" />
+    <ClInclude Include="Controllers\routing.h" />
     <ClInclude Include="Data Types\Database_Types.hpp" />
     <ClInclude Include="Data Types\Railnode.hpp" />
     <ClInclude Include="Data Types\Railway.hpp" />
@@ -222,6 +226,7 @@
     <ClInclude Include="Database.h" />
     <ClInclude Include="GeoJSON_conversion.h" />
     <ClInclude Include="resources.h" />
+    <ClInclude Include="Router.h" />
     <ClInclude Include="Server.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>

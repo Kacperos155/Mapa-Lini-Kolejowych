@@ -22,6 +22,9 @@ public:
 	const std::string& find(std::string_view query, std::string_view type = "rail_station", unsigned limit = 5);
 	const std::string& getGeoJSON(std::string_view ID, std::string_view type = "rail_station");
 	const std::string& getGeoJSON(BoundingBox bounds, int zoom = 20);
+	const std::string getRoute(int64_t start_ID, int64_t end_ID);
+
+	std::string testRoute();
 
 private:
 	std::string timestamp;

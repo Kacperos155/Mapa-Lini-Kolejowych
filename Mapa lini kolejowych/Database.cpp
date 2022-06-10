@@ -4,8 +4,13 @@
 #include <fmt/ranges.h>
 #include <fstream>
 #include <iostream>
+#include <cmath>
+#include <numbers>
+#include <queue>
+#include <chrono>
 
 #include "GeoJSON_conversion.h"
+#include "Router.h"
 
 template<typename T>
 const T* bindTag(SQLite::Statement& inserter, std::string_view bind_name, const nlohmann::json& json_object, std::string_view json_key)
@@ -201,6 +206,37 @@ const std::string& Database::getGeoJSON(BoundingBox bounds, int zoom)
 	fmt::print("Elements: {}\n", features_collection["features"].size());
 	buffer = features_collection.dump(1);
 	return buffer;
+}
+
+const std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
+{
+	static Routing Router{};
+
+	Railnode* start{};
+	Railnode* end{};
+
+	auto getNode = [&](Railnode* variable, int64_t ID)
+	{
+		try
+		{
+			variable = &railnodes.at(ID);
+		}
+		catch (std::exception& e)
+		{
+			fmt::print(fmt::fg(fmt::color::red), "ERROR: There is no node with ID: {}\n", ID);
+		}
+	};
+
+	getNode(start, start_ID);
+	getNode(end, end_ID);
+	
+
+	if (Router.route(*start, *end))
+	{
+		return Router.toGeoJson().dump(1);
+	}
+
+	return "";
 }
 
 void Database::calcMinMaxBoundry(double _minlon, double _minlat, double _maxlon, double _maxlat)
@@ -533,9 +569,7 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 		rail_line.line += ")";
 		insert_statement.bind(":line", rail_line.line);
 
-		auto boundry_statement = fmt::format("SELECT AsText(Envelope(GeomFromText(\'{}\', 4326)));", rail_line.line);
-		rail_line.boundry = database.execAndGet(boundry_statement).getText();
-		insert_statement.bind(":boundry", rail_line.boundry);
+		insert_statement.bind(":boundry", utilities::getGeometryBoundry(database, rail_line.line));
 
 		insert_statement.exec();
 		insert_statement.reset();
@@ -620,6 +654,38 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 	{
 		catchSQLiteException(e, "creating railway station");
 		return false;
+	}
+}
+
+std::string Database::testRoute()
+{
+	try
+	{
+		Routing Router;
+
+
+		auto time_start = std::chrono::high_resolution_clock::now();
+
+		const auto& start = railnodes.at(9227935317);
+		const auto& end = railnodes.at(2895210656);
+
+		if (!Router.route(start, end))
+		{
+			return {};
+		}
+
+		auto time_end = std::chrono::high_resolution_clock::now();
+		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
+		auto secounds = milliseconds / 1000;
+		milliseconds -= secounds * 1000;
+		fmt::print("Time passed on TEST routing: {}s {}ms\n", secounds, milliseconds);
+
+		return Router.toGeoJson().dump(1);
+	}
+	catch (const SQLite::Exception& e)
+	{
+		catchSQLiteException(e, "creating result of finding connection");
+		return {};
 	}
 }
 
