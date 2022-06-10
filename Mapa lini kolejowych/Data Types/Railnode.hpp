@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include <string_view>
 
 struct Railnode
@@ -7,6 +8,13 @@ struct Railnode
 	int64_t ref_counter : 6 {};
 	float lon{};
 	float lat{};
+
+	std::vector<Railnode*> neighbours;
+
+	Railnode()
+	{
+		neighbours.reserve(4);
+	}
 
 	static constexpr std::string_view sql_table_name = "Railnodes";
 	static constexpr std::string_view sql_create =

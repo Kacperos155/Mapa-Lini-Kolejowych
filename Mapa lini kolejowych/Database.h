@@ -37,6 +37,7 @@ private:
 
 	void calcMinMaxBoundry(double _minlon, double _minlat, double _maxlon, double _maxlat);
 	bool importData(const nlohmann::json& json_data);
+	bool importData_RailNode(const nlohmann::json::array_t& ids, const nlohmann::json::array_t& coords);
 	bool importData_Railway(const nlohmann::json& json_data);
 	bool importData_RailwayLine(const nlohmann::json& json_data);
 	bool importData_RailwayStation(const nlohmann::json& json_data);

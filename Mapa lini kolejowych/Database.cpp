@@ -27,8 +27,28 @@ Database::Database(const std::filesystem::path& database_path)
 
 void Database::showInfo()
 {
+	std::map<uint8_t, unsigned> node_connections;
+	for (const auto& node : railnodes)
+	{
+		auto connections = static_cast<uint8_t>(node.second.neighbours.size());
+		if (node_connections.contains(connections))
+		{
+			++node_connections.at(connections);
+		}
+		else
+		{
+			node_connections.try_emplace(connections, 1);
+		}
+	}
+
+
 	fmt::print("\t Timestamp: {}\n", timestamp);
-	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", "Rail nodes", railnodes.size());
+	fmt::print(fmt::fg(fmt::color::aqua), "\t Rail nodes: {}\n", railnodes.size());
+	for (const auto& connection : node_connections)
+	{
+		fmt::print(fmt::fg(fmt::color::alice_blue), "\t\t With {} connections: {}\n", connection.first, connection.second);
+	}
+
 	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway::sql_table_name, railways.size());
 	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_line::sql_table_name, raillines.size());
 	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_station::sql_table_name, railstations.size());
@@ -281,6 +301,43 @@ bool Database::importData(const nlohmann::json& json_data)
 	return true;
 }
 
+bool Database::importData_RailNode(const nlohmann::json::array_t& ids, const nlohmann::json::array_t& coords)
+{
+	static std::vector<Railnode*> nodes;
+	nodes.clear();
+	nodes.resize(ids.size());
+
+	for (auto i = 0; i < nodes.size(); ++i)
+	{
+		auto id = ids[i].get<uint64_t>();
+
+		if (railnodes.contains(id))
+		{
+			auto& node = railnodes.at(id);
+			++node.ref_counter;
+		}
+		else
+		{
+			Railnode node;
+			node.ID = id;
+			node.lat = coords[i]["lat"].get<float>();
+			node.lon = coords[i]["lon"].get<float>();
+			railnodes.try_emplace(id, std::move(node));
+		}
+		nodes[i] = &railnodes.at(id);
+	}
+
+	for (auto i = 0; i < nodes.size(); ++i)
+	{
+		if (0 < i)
+			nodes[i]->neighbours.push_back(nodes[i - 1]);
+		if (i < (nodes.size() - 1))
+			nodes[i]->neighbours.push_back(nodes[i + 1]);
+	}
+
+	return true;
+}
+
 bool Database::importData_Railway(const nlohmann::json& json_data)
 {
 	try
@@ -343,25 +400,7 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 
 		nlohmann::json::array_t nodes_id = json_data["nodes"];
 		nlohmann::json::array_t nodes_coords = json_data["geometry"];
-
-		for (auto i = 0; i < nodes_id.size(); ++i)
-		{
-			auto id = nodes_id[i].get<uint64_t>();
-
-			if (railnodes.contains(id))
-			{
-				auto& node = railnodes.at(id);
-				++node.ref_counter;
-			}
-			else
-			{
-				Railnode node;
-				node.ID = id;
-				node.lat = nodes_coords[i]["lat"].get<float>();
-				node.lon = nodes_coords[i]["lon"].get<float>();
-				railnodes.try_emplace(id, std::move(node));
-			}
-		}
+		importData_RailNode(nodes_id, nodes_coords);
 
 		const auto& bounds = json_data["bounds"];
 		railway.boundry = fmt::format("POLYGON(({0} {1}, {2} {1}, {2} {3}, {0} {3}))",
