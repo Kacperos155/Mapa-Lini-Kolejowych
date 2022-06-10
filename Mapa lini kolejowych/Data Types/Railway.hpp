@@ -3,8 +3,8 @@
 
 struct Railway
 {
-	uint64_t ID;
-	std::string line_name;
+	int64_t ID{};
+	std::string line_name{};
 
 	enum class Usage
 	{
@@ -14,15 +14,16 @@ struct Railway
 		Tourism,
 		Industrial,
 		Freight,
-		Military
-	} usage;
+		Military,
+	};
+	Usage usage{ Usage::Unknown };
 
-	uint16_t max_speed;
-	bool disusage;
-	bool electrified;
+	uint16_t max_speed{};
+	bool disusage{ false };
+	bool electrified{ false };
 
-	std::string boundry;
-	std::string line;
+	std::string boundry{};
+	std::string line{};
 
 	static constexpr std::string_view sql_table_name = "Railways";
 	static constexpr std::string_view sql_create =

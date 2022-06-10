@@ -6,7 +6,19 @@
 #include <iostream>
 
 #include "GeoJSON_conversion.h"
-#include "Data Types/Database_Types.hpp"
+
+template<typename T>
+const T* bindTag(SQLite::Statement& inserter, std::string_view bind_name, const nlohmann::json& json_object, std::string_view json_key)
+{
+	if (json_object.contains(json_key))
+	{
+		inserter.bind(bind_name.data(), json_object[json_key.data()].get_ref<const T&>());
+		return json_object[json_key.data()].get_ptr<const T*>();
+	}
+
+	inserter.bind(bind_name.data());
+	return nullptr;
+}
 
 Database::Database(const std::filesystem::path& database_path)
 {
@@ -15,16 +27,11 @@ Database::Database(const std::filesystem::path& database_path)
 
 void Database::showInfo()
 {
-	auto show_amount = [&](std::string_view table)
-	{
-		auto amount = database.execAndGet(fmt::format(R"(SELECT COUNT(*) FROM "{}";)", table)).getInt64();
-		fmt::print("\t {}: {}\n", table, amount);
-	};
-
 	fmt::print("\t Timestamp: {}\n", timestamp);
-	show_amount(Railway::sql_table_name);
-	show_amount(Railway_line::sql_table_name);
-	show_amount(Railway_station::sql_table_name);
+	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", "Rail nodes", railnodes.size());
+	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway::sql_table_name, railways.size());
+	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_line::sql_table_name, raillines.size());
+	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_station::sql_table_name, railstations.size());
 
 	fmt::print("\t Min Lat: {:.2f}, Min Lon: {:.2f}\n", minlat, minlon);
 	fmt::print("\t Max Lat: {:.2f}, Max Lon: {:.2f}\n", maxlat, maxlon);
@@ -33,7 +40,7 @@ void Database::showInfo()
 bool Database::importFromString(std::string_view json_string)
 {
 	nlohmann::json j;
-	j = j.parse(json_string.data());
+	j = nlohmann::json::parse(json_string.data());
 	auto kb = json_string.size() / 1024;
 	auto mb = kb / 1024;
 	kb %= 1024;
@@ -62,7 +69,7 @@ void Database::loadFromFile(const std::filesystem::path& database_path)
 	{
 		database.loadExtension("mod_spatialite.dll", nullptr);
 	}
-	catch (SQLite::Exception& e)
+	catch (const SQLite::Exception& e)
 	{
 		fmt::print("{}\n", e.what());
 	}
@@ -96,12 +103,10 @@ const std::string& Database::find(std::string_view query, std::string_view type,
 {
 	static std::string buffer{};
 	auto find_query = Railway_station::sql_search;
-	auto location_function = GeoJSON::getRailStation;
 
 	if (type == "rail_line")
 	{
 		find_query = Railway_line::sql_search;
-		location_function = GeoJSON::getRailLine;
 	}
 	else if (type != "rail_station")
 	{
@@ -213,7 +218,6 @@ bool Database::importData(const nlohmann::json& json_data)
 
 	for (const auto& element : json_data["elements"])
 	{
-		bool r = false;
 		element["type"].get_to(type);
 		if (type == "way")
 		{
@@ -281,58 +285,106 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 {
 	try
 	{
+		Railway railway;
 		auto insert_statement = SQLite::Statement{ database, Railway::sql_insert.data() };
 
-		static auto id = std::string{};
-		static auto boundry = std::string{};
-		static auto line = std::string{};
-		static auto disusage = std::string{};
-
-		id = json_data["id"].dump();
-		insert_statement.bind(":id", id);
-
-		const auto& tags = json_data["tags"];
-		if (!bindTag(insert_statement, ":line_name", getTag(tags, "ref")))
+		if (auto id = bindTag<int64_t>(insert_statement, ":id", json_data, "id"); id != nullptr)
+		{
+			railway.ID = *id;
+		}
+		else
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway ({}): Line number is empty \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway: ID is empty \n");
 			return false;
 		}
-		bindTag(insert_statement, ":usage", getTag(tags, "usage"));
-		bindTag(insert_statement, ":max_speed", getTag(tags, "maxspeed"));
 
-		//TODO Repair railway tags
-		/*if (tags.contains("disused:railway") || tags["railway"] == "disused")
-			disusage = "disused";
-		else if (tags.contains("abandoned:railway"))
-			disusage = "abandoned";
-		bindTag(insert_statement, ":disusage", disusage.size() ? &disusage : nullptr);
-		disusage.clear();
+		const auto& tags = json_data["tags"];
+
+		if (auto line_name = bindTag<std::string>(insert_statement, ":line_name", tags, "ref"); line_name != nullptr)
+		{
+			railway.line_name = *line_name;
+		}
+		else
+		{
+			insert_statement.reset();
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway ({}): Line number is empty \n", railway.ID);
+			return false;
+		}
+
+		if (auto usage = bindTag<std::string>(insert_statement, ":usage", tags, "usage"); usage != nullptr)
+		{
+			;// TODO railway.usage = *usage;
+		}
+
+		if (auto max_speed = bindTag<std::string>(insert_statement, ":max_speed", tags, "maxspeed"))
+		{
+			railway.max_speed = static_cast<uint16_t>(std::stoi(*max_speed));
+		}
+
+		if (tags.contains("railway"))
+		{
+			if (tags["railway"] == "disused")
+			{
+				railway.disusage = true;
+			}
+		}
+		insert_statement.bind(":disusage", railway.disusage);
 
 		if (tags.contains("electrified"))
 		{
-			bindTag(insert_statement, ":disusage", disusage.size() ? &disusage : nullptr);
-		}*/
+			if (tags["electrified"] != "no")
+			{
+				railway.electrified = true;
+			}
+		}
+		insert_statement.bind(":electrified", railway.electrified);
+
+
+		nlohmann::json::array_t nodes_id = json_data["nodes"];
+		nlohmann::json::array_t nodes_coords = json_data["geometry"];
+
+		for (auto i = 0; i < nodes_id.size(); ++i)
+		{
+			auto id = nodes_id[i].get<uint64_t>();
+
+			if (railnodes.contains(id))
+			{
+				auto& node = railnodes.at(id);
+				++node.ref_counter;
+			}
+			else
+			{
+				Railnode node;
+				node.ID = id;
+				node.lat = nodes_coords[i]["lat"].get<float>();
+				node.lon = nodes_coords[i]["lon"].get<float>();
+				railnodes.try_emplace(id, std::move(node));
+			}
+		}
 
 		const auto& bounds = json_data["bounds"];
-		boundry = fmt::format("POLYGON(({0} {1}, {2} {1}, {2} {3}, {0} {3}))",
+		railway.boundry = fmt::format("POLYGON(({0} {1}, {2} {1}, {2} {3}, {0} {3}))",
 			bounds["minlon"].dump(), bounds["minlat"].dump(),
 			bounds["maxlon"].dump(), bounds["maxlat"].dump());
 
-		insert_statement.bind(":boundry", boundry);
+		insert_statement.bind(":boundry", railway.boundry);
 
-		line = "LINESTRING(";
-		for (const auto& point : json_data["geometry"])
+		railway.line.reserve(16 + 8 * nodes_coords.size());
+		railway.line = "LINESTRING(";
+		for (const auto& point : nodes_coords)
 		{
-			line += fmt::format("{} {}, ", point["lon"].dump(), point["lat"].dump());
+			railway.line += fmt::format("{} {}, ", point["lon"].dump(), point["lat"].dump());
 		}
-		line.pop_back();
-		line.pop_back();
-		line += ")";
-		insert_statement.bind(":line", line);
+		railway.line.pop_back();
+		railway.line.pop_back();
+		railway.line += ")";
+		insert_statement.bind(":line", railway.line);
 
 		insert_statement.exec();
 		insert_statement.reset();
+
+		railways.try_emplace(railway.ID, std::move(railway));
 		return true;
 	}
 	catch (const SQLite::Exception& e)
@@ -346,18 +398,23 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 {
 	try
 	{
+		Railway_line rail_line;
 		auto insert_statement = SQLite::Statement{ database, Railway_line::sql_insert.data()};
 
-		static auto id = std::string{};
-		static auto color = std::string{};
-		static auto boundry = std::string{};
-		static auto line = std::string{};
+		if (auto id = bindTag<int64_t>(insert_statement, ":id", json_data, "id"); id != nullptr)
+		{
+			rail_line.ID = *id;
+		}
+		else
+		{
+			insert_statement.reset();
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway line: ID is empty \n");
+			return false;
+		}
 
-		id = json_data["id"].dump();
-		insert_statement.bind(":id", id);
-
-		auto id_hash = std::hash<std::string>{}(id);
-		color = fmt::format("{:x}", id_hash % 200 + 55);
+		//TODO Assing color to member
+		auto id_hash = std::hash<decltype(rail_line.ID)>{}(rail_line.ID);
+		auto color = fmt::format("{:x}", id_hash % 200 + 55);
 		id_hash /= 255;
 		color += fmt::format("{:x}", id_hash % 200 + 55);
 		id_hash /= 255;
@@ -365,60 +422,86 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 		insert_statement.bind(":color", color);
 
 		const auto& tags = json_data["tags"];
+		if (auto number = bindTag<std::string>(insert_statement, ":number", tags, "ref"); number != nullptr)
+		{
+			rail_line.number = *number;
+		}
+		else
+		{
+			insert_statement.reset();
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway line ({}): Line number is empty \n", rail_line.ID);
+			return false;
+		}
+
+		if (auto name = bindTag<std::string>(insert_statement, ":name", tags, "name"); name != nullptr)
+		{
+			rail_line.name = *name;
+		}
+
+		if (auto network = bindTag<std::string>(insert_statement, ":network", tags, "network"); network != nullptr)
+		{
+			rail_line.network = *network;
+		}
 		
-		if (!bindTag(insert_statement, ":number", getTag(tags, "ref")))
+		if (auto line_operator = bindTag<std::string>(insert_statement, ":operator", tags, "operator"); line_operator != nullptr)
+		{
+			rail_line.line_operator = *line_operator;
+		}
+
+		if (auto line_from = bindTag<std::string>(insert_statement, ":from", tags, "from"); line_from != nullptr)
+		{
+			rail_line.from = *line_from;
+		}
+		if (auto line_via = bindTag<std::string>(insert_statement, ":via", tags, "via"); line_via != nullptr)
+		{
+			rail_line.via = *line_via;
+		}
+		if (auto line_to = bindTag<std::string>(insert_statement, ":to", tags, "to"); line_to != nullptr)
+		{
+			rail_line.to = *line_to;
+		}
+
+		nlohmann::json::array_t segments = json_data["members"];
+
+		uint32_t segments_number{};
+		rail_line.line = "MULTILINESTRING (";
+
+		for (const auto& segment : segments)
+		{
+			if ((segment["type"] != "way") && segment["role"] != "")
+				continue;
+
+			auto id = segment["ref"].get<int64_t>();
+			if (!railways.contains(id))
+				continue;
+
+			++segments_number;
+			const auto& railway = railways.at(id);
+
+			std::string_view line_segment = railway.line;
+			line_segment.remove_prefix(10);
+			rail_line.line += fmt::format("{}, ", line_segment);
+		}
+		if (!segments_number)
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway line ({}): Line number is empty \n", id);
-			return false;
-		}
-		bindTag(insert_statement, ":name", getTag(tags, "name"));
-		bindTag(insert_statement, ":network", getTag(tags, "network"));
-		bindTag(insert_statement, ":operator", getTag(tags, "operator"));
-
-		//TODO: Railway line geometric line
-		/*static auto link = SQLite::Statement{ database, sql::rail_line_segment_insert };
-		for (const auto& segment : json_data["members"])
-		{
-			if (segment["type"] != "way")
-				continue;
-			if (segment["role"] != "")
-				continue;
-			link.bind(1, id);
-			link.bind(2, segment["ref"].dump());
-
-			link.exec();
-			link.reset();
-		}
-
-		line = "MULTILINESTRING (";
-		static auto line_statement = SQLite::Statement{ database, sql::query::get_rail_line_line_strings };
-		line_statement.bind(1, id);
-		while (line_statement.executeStep())
-		{
-			auto segment = std::string_view{ line_statement.getColumn(0).getText() };
-			segment.remove_prefix(10);
-			line += fmt::format("{}, ", segment);
-		}
-		line_statement.reset();
-		if (line.size() < 20)
-		{
-			insert_statement.reset();
-			line_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid rail line ({}): Line has no segments \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid rail line ({}): Line has no segments \n", rail_line.ID);
 			return false;
 		}
 
-		line.pop_back();
-		line.pop_back();
-		line += ")";
-		insert_statement.bind(":line", line);
+		rail_line.line.pop_back();
+		rail_line.line.pop_back();
+		rail_line.line += ")";
+		insert_statement.bind(":line", rail_line.line);
 
-		auto boundry_statement = fmt::format("SELECT AsText(Envelope(GeomFromText(\'{}\', 4326)));", line);
-		insert_statement.bind(":boundry", database.execAndGet(boundry_statement).getText());*/
+		auto boundry_statement = fmt::format("SELECT AsText(Envelope(GeomFromText(\'{}\', 4326)));", rail_line.line);
+		rail_line.boundry = database.execAndGet(boundry_statement).getText();
+		insert_statement.bind(":boundry", rail_line.boundry);
 
 		insert_statement.exec();
 		insert_statement.reset();
+
+		raillines.try_emplace(rail_line.ID, std::move(rail_line));
 		return true;
 	}
 	catch (const SQLite::Exception& e)
@@ -432,53 +515,66 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 {
 	try
 	{
+		Railway_station station;
 		static auto insert_statement = SQLite::Statement{ database, Railway_station::sql_insert.data() };
-		static auto id = std::string{};
-		static auto point = std::string{};
 
-
-		id = json_data["id"].dump();
-		insert_statement.bind(":id", id);
-
-		const auto& tags = json_data["tags"];
-
-		if(!bindTag(insert_statement, ":name", getTag(tags, "name")))
+		if (auto id = bindTag<int64_t>(insert_statement, ":id", json_data, "id"); id != nullptr)
+		{
+			station.ID = *id;
+		}
+		else
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Name is empty \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway line: ID is empty \n");
 			return false;
 		}
 
-		point = fmt::format("POINT({} {})",
-			json_data["lon"].dump(), json_data["lat"].dump());
-		insert_statement.bind(":point", point);
+		const auto& tags = json_data["tags"];
+		if (auto name = bindTag<std::string>(insert_statement, ":name", tags, "name"); name != nullptr)
+		{
+			station.name = *name;
+		}
+		else
+		{
+			insert_statement.reset();
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Name is empty \n", station.ID);
+			return false;
+		}
 
-		unsigned type = 0;
+		station.lat = json_data["lat"].get<float>();
+		station.lon = json_data["lon"].get<float>();
+
+		station.point = fmt::format("POINT({} {})", station.lon, station.lat);
+		insert_statement.bind(":point", station.point);
+
+		station.type = Railway_station::Type::Invalid;
 		if (tags.contains("railway"))
 		{
 			if (tags["railway"] == "station")
-				type = 1;
+				station.type = Railway_station::Type::Station;
 			else if (tags["railway"] == "halt")
-				type = 2;
+				station.type = Railway_station::Type::Stop;
 		}
 		else if (tags.contains("disused:railway"))
 		{
 			if (tags["disused:railway"] == "station")
-				type = 3;
+				station.type = Railway_station::Type::Disused_Station;
 			else if (tags["disused:railway"] == "halt")
-				type = 4;
+				station.type = Railway_station::Type::Disused_Stop;
 		}
 
-		if (!type)
+		if (station.type == Railway_station::Type::Invalid)
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Type is empty \n", id);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Type is empty \n", station.ID);
 			return false;
 		}
 
-		insert_statement.bind(":type", type);
+		insert_statement.bind(":type", static_cast<int>(station.type));
 		insert_statement.exec();
 		insert_statement.reset();
+
+		railstations.try_emplace(station.ID, std::move(station));
 		return true;
 	}
 	catch (const SQLite::Exception& e)
@@ -583,13 +679,4 @@ void catchSQLiteException(const SQLite::Exception& e, std::string_view when, std
 	fmt::print(fmt::fg(fmt::color::red), "ERROR: SQL Exception when {}: {}\n", when, e.what());
 	if (dump.size())
 		fmt::print("Dumping potential exception cause: \n {} \n", dump);
-}
-
-const std::string* const Database::getTag(const nlohmann::json& tags, const std::string& tag)
-{
-	if (tags.contains(tag))
-	{
-		return &(tags[tag].get_ref<const std::string&>());
-	}
-	return nullptr;
 }

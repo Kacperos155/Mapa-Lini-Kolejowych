@@ -5,20 +5,20 @@
 
 struct Railway_line
 {
-	uint64_t ID;
-	std::string number;
-	std::string name;
-	std::string network;
-	std::string line_operator;
+	int64_t ID{};
+	std::string number{};
+	std::string name{};
+	std::string network{};
+	std::string line_operator{};
 
 	std::array<char, 6> color;
 
-	std::string from;
-	std::string via;
-	std::string to;
+	std::string from{};
+	std::string via{};
+	std::string to{};
 
-	std::string boundry;
-	std::string line;
+	std::string boundry{};
+	std::string line{};
 
 	static constexpr std::string_view sql_table_name = "Railway lines";
 	static constexpr std::string_view sql_create =

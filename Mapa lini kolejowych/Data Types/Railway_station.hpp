@@ -4,19 +4,23 @@
 
 struct Railway_station
 {
-	uint64_t ID;
-	std::string name;
-	uint64_t node_ID;
-	float lon;
-	float lat;
+	int64_t ID{};
+	std::string name{};
+	uint64_t node_ID{};
+	float lon{};
+	float lat{};
 
 	enum class Type : uint8_t
 	{
+		Invalid = 0,
 		Station = 1,
 		Stop = 2,
 		Disused_Station = 3,
 		Disused_Stop = 4
-	} type;
+	};
+	Type type {Type::Invalid };
+
+	std::string point;
 
 	static constexpr std::string_view sql_table_name = "Railway stations";
 	static constexpr std::string_view sql_create =

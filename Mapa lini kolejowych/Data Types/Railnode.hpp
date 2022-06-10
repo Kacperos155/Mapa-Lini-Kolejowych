@@ -3,10 +3,10 @@
 
 struct Railnode
 {
-	uint64_t ID : 58;
-	uint8_t ref_counter;
-	float lon;
-	float lat;
+	int64_t ID : 58 {};
+	uint8_t ref_counter{};
+	float lon{};
+	float lat{};
 
 	static constexpr std::string_view sql_table_name = "Railnodes";
 	static constexpr std::string_view sql_create =
