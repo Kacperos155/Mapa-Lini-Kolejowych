@@ -1,10 +1,10 @@
 #pragma once
-#include <cstdint>
+#include <string_view>
 
 struct Railnode
 {
 	int64_t ID : 58 {};
-	uint8_t ref_counter{};
+	int64_t ref_counter : 6 {};
 	float lon{};
 	float lat{};
 
