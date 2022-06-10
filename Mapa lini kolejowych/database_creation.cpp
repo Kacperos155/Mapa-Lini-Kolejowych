@@ -54,27 +54,34 @@ bool databaseFromOSMserver(std::string_view country_tag)
 	fmt::print(fmt::fg(fmt::color::yellow), response.text);
 	fmt::print("\nPlease be patient. Downloading data could take up to 30 minutes. \n");
 
-	auto query = std::string(overpass_query);
+	auto query = std::string(overpass_query::query);
+	auto area_definition = std::string(overpass_query::area_country);
+
 	if (country_tag == "test" || country_tag == "[test]")
 	{
-		query = overpass_query_pomorskie;
+		area_definition = overpass_query::area_pomorskie;
 	}
-	else if (country_tag != "PL")
+	else if (country_tag.size() == 2)
 	{
-		auto it = query.find("PL");
-		if (it == std::string::npos)
-			return false;
-		query[it] = country_tag[0];
-		query[it + 1] = country_tag[1];
+		area_definition = fmt::format(fmt::runtime(area_definition), country_tag);
 	}
-	query = "https://overpass-api.de/api/interpreter?data=" + cpr::util::urlEncode(query);
+	else
+	{
+		fmt::print(fmt::fg(fmt::color::red), "ERROR: Invalid country tag: {}\n", country_tag);
+		return false;
+	}
+	query = fmt::format(fmt::runtime(query), area_definition);
 
 	auto output_path = std::filesystem::path{ fmt::format("Overpass data\\{}.json", country_tag) };
 	if (!std::filesystem::exists(output_path.parent_path()))
 		std::filesystem::create_directories(output_path.parent_path());
 
 	auto download_start = std::chrono::high_resolution_clock::now();
-	response = cpr::Get(cpr::Url(std::move(query)));
+	response = cpr::Post(
+		cpr::Url("https://overpass-api.de/api/interpreter"),
+		//cpr::Parameter("data", cpr::util::urlEncode(query))
+		cpr::Body(query)
+		);
 	auto download_duration = std::chrono::high_resolution_clock::now() - download_start;
 
 	if (!cpr::status::is_success(response.status_code))
@@ -87,6 +94,7 @@ bool databaseFromOSMserver(std::string_view country_tag)
 
 	std::ofstream output_file(output_path);
 	output_file << response.text;
+	output_file.flush();
 
 	if (auto& DB = resources::getDatabase(); DB.importFromString(response.text))
 	{
