@@ -5,9 +5,15 @@ let fromID = -1;
 let from = "";
 let toID = -1;
 let to = "";
+const lines = [];
+let lineNR = 0;
 
 function select(id, type) {
 	parent.postMessage('select;' + type + ';' + id, location.href);
+}
+
+function selectLine(line) {
+	parent.postMessage('line;' + lines[line], location.href);
 }
 
 function selectFromStation(id, name) {
@@ -30,9 +36,9 @@ function updateFromTo() {
 	else {
 		let rd = "";
 		rd += '<tr class="result_table_row">';
-		rd += '<th class="result_table">' + from + '</th>';
-		rd += '<th class="result_table">' + to + '</th>';
-		rd += '<th class="result_table">' + 'X km' + '</th>';
+		rd += '<th class="result_table" onclick = "select(' + fromID + ', ' + "'rail_station'" + ')">' + from + '</th>';
+		rd += '<th class="result_table" onclick = "select(' + toID + ', ' + "'rail_station'" + ')">' + to + '</th>';
+		rd += '<th class="result_table">' + 'km m' + '</th>';
 		rd += '</tr>';
 		document.getElementById('RouteDistanceTable').innerHTML = orginal_rd + rd;
 		table.style.display = "flex";
@@ -46,22 +52,25 @@ function CalculateDistance() {
 		console.log(url);
 		fetch(url)
 			.then(response => response.json())
-			.then((distance) => {
+			.then((result) => {
 				let rd = "";
 				rd += '<tr class="result_table_row">';
-				rd += '<th class="result_table">' + from + '</th>';
-				rd += '<th class="result_table">' + to + '</th>';
-				rd += '<th class="result_table">' + distance +  ' m' + '</th>';
+				rd += '<th class="result_table" onclick="select(' + fromID + ', ' + "'rail_station'" + ')">' + from + '</th>';
+				rd += '<th class="result_table" onclick="select(' + toID + ', ' + "'rail_station'" + ')">' + to + '</th>';
+				rd += '<th class="result_table" onclick="selectLine(' + lineNR + ')">' + Math.trunc(result.properties.distance / 1000) +  'km ' + result.properties.distance % 1000 +  'm</th>';
 				rd += '</tr>';
 				document.getElementById('RouteDistanceTable').innerHTML = orginal_rd + rd;
-			}
-			
-	//bake the results
-	orginal_rd = document.getElementById('RouteDistanceTable').innerHTML;
-	fromID = -2;
-	from = "";
-	toID = -2;
-	to = "";
+				//bake the results
+				orginal_rd = document.getElementById('RouteDistanceTable').innerHTML;
+				fromID = -2;
+				from = "";
+				toID = -2;
+				to = "";
+				//select line
+				lines[lineNR] = JSON.stringify(result);
+				selectLine(lineNR);
+				lineNR++;
+			})
 	}
 }
 
