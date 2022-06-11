@@ -30,6 +30,7 @@ private:
 	std::string timestamp;
 	SQLite::Database database{ ":memory:" };
 	BoundingBox max_bounding{ 1000, 1000, -1000, -1000 };
+	std::map<std::string_view, SQLite::Statement> sql_statements;
 	std::map<uint64_t, Railnode> railnodes;
 	std::map<uint64_t, Railway> railways;
 	std::map<uint64_t, Railway_line> raillines;

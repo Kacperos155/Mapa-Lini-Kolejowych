@@ -227,7 +227,7 @@ std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
 
 	getNode(start, start_ID);
 	getNode(end, end_ID);
-	
+
 
 	if (Router.route(*start->node, *end->node))
 	{
@@ -254,9 +254,11 @@ void Database::calcMinMaxBoundry(double _minlon, double _minlat, double _maxlon,
 bool Database::importData(const nlohmann::json& json_data)
 {
 	database = SQLite::Database(":memory:", SQLite::OPEN_CREATE | SQLite::OPEN_READWRITE);
-	database.loadExtension("mod_spatialite.dll", nullptr);
-	SQLite::Transaction transaction(database);
+	utilities::loadSpatiaLite(database);
 
+	sql_statements.clear();
+
+	SQLite::Transaction transaction(database);
 	try
 	{
 		database.exec(sql_init_spatialite.data());
@@ -265,6 +267,10 @@ bool Database::importData(const nlohmann::json& json_data)
 		database.exec(Railway_line::sql_create.data());
 		database.exec(Railway_station::sql_create.data());
 		database.exec(Variable::sql_create.data());
+
+		sql_statements.try_emplace(Railway::sql_table_name, database, Railway::sql_insert.data());
+		sql_statements.try_emplace(Railway_line::sql_table_name, database, Railway_line::sql_insert.data());
+		sql_statements.try_emplace(Railway_station::sql_table_name, database, Railway_station::sql_insert.data());
 	}
 	catch (const SQLite::Exception& e)
 	{
@@ -376,7 +382,7 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 	try
 	{
 		Railway railway;
-		auto insert_statement = SQLite::Statement{ database, Railway::sql_insert.data() };
+		auto& insert_statement = sql_statements.at(Railway::sql_table_name);
 
 		if (auto id = bindTag<int64_t>(insert_statement, ":id", json_data, "id"); id != nullptr)
 		{
@@ -431,14 +437,17 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 		insert_statement.bind(":electrified", railway.electrified);
 
 
-		nlohmann::json::array_t nodes_id = json_data["nodes"];
-		nlohmann::json::array_t nodes_coords = json_data["geometry"];
+		const nlohmann::json::array_t& nodes_id = json_data["nodes"];
+		const nlohmann::json::array_t& nodes_coords = json_data["geometry"];
 		importData_RailNode(nodes_id, nodes_coords);
 
 		const auto& bounds = json_data["bounds"];
 		railway.boundry = fmt::format("POLYGON(({0} {1}, {2} {1}, {2} {3}, {0} {3}))",
-			bounds["minlon"].dump(), bounds["minlat"].dump(),
-			bounds["maxlon"].dump(), bounds["maxlat"].dump());
+			bounds["minlon"].get<const float>(),
+			bounds["minlat"].get<const float>(),
+			bounds["maxlon"].get<const float>(),
+			bounds["maxlat"].get<const float>()
+		);
 
 		insert_statement.bind(":boundry", railway.boundry);
 
@@ -446,7 +455,11 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 		railway.line = "LINESTRING(";
 		for (const auto& point : nodes_coords)
 		{
-			railway.line += fmt::format("{} {}, ", point["lon"].dump(), point["lat"].dump());
+			railway.line +=
+				fmt::format("{} {}, ",
+					point["lon"].get<const float>(),
+					point["lat"].get<const float>()
+				);
 		}
 		railway.line.pop_back();
 		railway.line.pop_back();
@@ -471,7 +484,7 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 	try
 	{
 		Railway_line rail_line;
-		auto insert_statement = SQLite::Statement{ database, Railway_line::sql_insert.data()};
+		auto& insert_statement = sql_statements.at(Railway_line::sql_table_name);
 
 		if (auto id = bindTag<int64_t>(insert_statement, ":id", json_data, "id"); id != nullptr)
 		{
@@ -514,7 +527,7 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 		{
 			rail_line.network = *network;
 		}
-		
+
 		if (auto line_operator = bindTag<std::string>(insert_statement, ":operator", tags, "operator"); line_operator != nullptr)
 		{
 			rail_line.line_operator = *line_operator;
@@ -586,7 +599,7 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 	try
 	{
 		Railway_station station;
-		static auto insert_statement = SQLite::Statement{ database, Railway_station::sql_insert.data() };
+		auto& insert_statement = sql_statements.at(Railway_station::sql_table_name);
 
 		if (auto id = bindTag<int64_t>(insert_statement, ":id", json_data, "id"); id != nullptr)
 		{
@@ -679,6 +692,7 @@ std::pair<Railnode*, float> Database::nearestRailnode(float lat, float lon)
 		d_lon *= d_lon;
 
 		auto distance = std::sqrt(d_lat + d_lon);
+
 		if (distance < min_distance)
 		{
 			min_distance = distance;
