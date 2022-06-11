@@ -67,6 +67,11 @@ uint64_t Routing::getTimePassed() const
 	return milisecounds_duration;
 }
 
+uint64_t Routing::getTraveledNodes() const
+{
+	return nodes.size();
+}
+
 nlohmann::json Routing::toGeoJson(std::string_view start_name, std::string_view end_name)
 {
 	auto json = GeoJSON::createFeature();
@@ -91,39 +96,39 @@ void Routing::find_path()
 	Heuristic heuristic;
 	heuristic.goal = start_node;
 
-	std::priority_queue<Node, std::vector<Node>, Heuristic> queue(heuristic);
+	//std::priority_queue<Node*, std::vector<Node*>, Heuristic> queue(heuristic);
+	std::priority_queue<Node*> queue;
 
 	const auto& end_distance = end_node->distance;
 
-	queue.push(*start_node);
+	queue.push(start_node);
 
 	while (!queue.empty())
 	{
 		auto step = queue.top();
 		queue.pop();
 
-		if (end_distance < step.distance)
-			continue;
-
-		for (const auto n : step.node->neighbours)
+		for (const auto n : step->node->neighbours)
 		{
-			auto new_distance = step.distanceTo(*n);
-			new_distance += step.distance;
+			auto new_distance = step->distanceTo(*n);
+			new_distance += step->distance;
 
-			if (nodes.contains(n->ID))
+			if (end_distance < new_distance)
+				continue;
+
+			if (auto it = nodes.find(n->ID); it != nodes.end())
 			{
-				auto& distance = nodes.at(n->ID);
+				auto& distance = it->second;
 				if (distance.distance <= new_distance)
 				{
 					continue;
 				}
 				distance.distance = new_distance;
-				distance.back_node = &nodes.at(step.node->ID);
+				distance.back_node = step;
 			}
 
-			auto new_distance_obj = Node(n, &nodes.at(step.node->ID), new_distance);
-			nodes.try_emplace(n->ID, new_distance_obj);
-			queue.emplace(new_distance_obj);
+			auto [emplacing, emplacing_bool] = nodes.try_emplace(n->ID, n, &nodes.at(step->node->ID), new_distance);
+			queue.push(&emplacing->second);
 		}
 	}
 }
@@ -154,10 +159,10 @@ double Routing::Heuristic::distanceToGoal(const Node& node) const
 	return lat + lon;
 }
 
-bool Routing::Heuristic::operator()(const Node& left, const Node& right)
+bool Routing::Heuristic::operator()(const Node* left, const Node* right)
 {
-	auto left_distance = left.distance + distanceToGoal(left);
-	auto right_distance = right.distance + distanceToGoal(right);
+	auto left_distance = left->distance + distanceToGoal(*left);
+	auto right_distance = right->distance + distanceToGoal(*right);
 
 	return left_distance < right_distance;
 }

@@ -29,7 +29,7 @@ class Routing
 		Node* goal;
 		double distanceToGoal(const Node& node) const;
 
-		bool operator()(const Node& left, const Node& right);
+		bool operator()(const Node* left, const Node* right);
 	};
 
 public:
@@ -38,6 +38,7 @@ public:
 	bool route(const Railnode& start, const Railnode& end);
 	uint32_t getDistance() const;
 	uint64_t getTimePassed() const;
+	uint64_t getTraveledNodes() const;
 
 	[[nodiscard]]
 	nlohmann::json toGeoJson(std::string_view start_name = "START_NAME", std::string_view end_name = "END_NAME");
