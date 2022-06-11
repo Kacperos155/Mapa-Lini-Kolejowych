@@ -253,14 +253,14 @@ window.addEventListener('message', (event) => {
 				selectLine(id);
 		}
 		if (message_type == "line") {
-			//let result = JSON.parse(event.data.substring(delimiter + 1));
+			let result = JSON.parse(event.data.substring(delimiter + 1));
 			//uncomment above
-			url = main_url + '/getElement/rail_line/319222';
-			console.log(url);
-			fetch(url)
-				.then(response => response.json())
-				.then((result) => {
-					console.log(result);
+			//url = main_url + '/getElement/rail_line/319222';
+			//console.log(url);
+			//fetch(url)
+			//	.then(response => response.json())
+			//	.then((result) => {
+			//		console.log(result);
 					// comment till here
 					if (result.properties.bounds) {
 						let coords = result.properties.bounds.coordinates[0];
@@ -276,7 +276,7 @@ window.addEventListener('message', (event) => {
 					selection.addTo(map);
 					selection_to_remove = true;
 				}
-			) //remember about this
+			//) //remember about this
 		}
 	}
-})
+)
