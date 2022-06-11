@@ -217,6 +217,7 @@ function selectLine(ID) {
 	fetch(url)
 		.then(response => response.json())
 		.then((result) => {
+			console.log(result);
 			if (result.properties.bounds) {
 				let coords = result.properties.bounds.coordinates[0];
 				let c1 = L.latLng(coords[0][1], coords[0][0]);
@@ -240,8 +241,8 @@ window.addEventListener('message', (event) => {
 		if (delimiter != -1) {
 			message_type = event.data.substring(0, delimiter);
 		}
+		let start = delimiter + 1;
 		if (message_type == "select") {
-			let start = delimiter + 1;
 			delimiter = event.data.indexOf(';', start);
 			let type = event.data.substring(start, delimiter);
 			let id = event.data.substring(delimiter + 1);
@@ -251,5 +252,31 @@ window.addEventListener('message', (event) => {
 			else if (type == 'rail_line')
 				selectLine(id);
 		}
+		if (message_type == "line") {
+			let result = JSON.parse(event.data.substring(delimiter + 1));
+			//uncomment above
+			//url = main_url + '/getElement/rail_line/319222';
+			//console.log(url);
+			//fetch(url)
+			//	.then(response => response.json())
+			//	.then((result) => {
+			//		console.log(result);
+					// comment till here
+					if (result.properties.bounds) {
+						let coords = result.properties.bounds.coordinates[0];
+						let c1 = L.latLng(coords[0][1], coords[0][0]);
+						let c2 = L.latLng(coords[2][1], coords[2][0]);
+						map.fitBounds(L.latLngBounds(c1, c2));
+					}
+					
+					selection.remove();
+					selection = L.geoJSON(result, {
+						style: { color: "#ffffff", weight: 15 }
+					});
+					selection.addTo(map);
+					selection_to_remove = true;
+				}
+			//) //remember about this
+		}
 	}
-})
+)
