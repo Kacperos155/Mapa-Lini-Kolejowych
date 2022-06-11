@@ -24,6 +24,13 @@ class Routing
 		}
 	};
 
+	struct Heuristic
+	{
+		Node* goal;
+		double distanceToGoal(const Node& node) const;
+
+		bool operator()(const Node& left, const Node& right);
+	};
 
 public:
 	Routing();

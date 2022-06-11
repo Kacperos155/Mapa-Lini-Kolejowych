@@ -39,6 +39,7 @@ Routing::Routing()
 
 bool Routing::route(const Railnode& start, const Railnode& end)
 {
+	nodes.clear();
 	nodes.try_emplace(start.ID, &start, nullptr, 0);
 	nodes.try_emplace(end.ID, &end, nullptr, std::numeric_limits<double>::max());
 
@@ -84,7 +85,10 @@ nlohmann::json Routing::toGeoJson(std::string_view start_name, std::string_view 
 
 void Routing::find_path()
 {
-	std::priority_queue<Node> queue;
+	Heuristic heuristic;
+	heuristic.goal = start_node;
+
+	std::priority_queue<Node, std::vector<Node>, Heuristic> queue(heuristic);
 
 	const auto& end_distance = end_node->distance;
 
@@ -137,4 +141,20 @@ std::string Routing::createMultiLineString() const
 	line.pop_back();
 	line += "))";
 	return line;
+}
+
+double Routing::Heuristic::distanceToGoal(const Node& node) const
+{
+	auto lat = std::abs(goal->node->lat - node.node->lat);
+	auto lon = std::abs(goal->node->lon - node.node->lon);
+
+	return lat + lon;
+}
+
+bool Routing::Heuristic::operator()(const Node& left, const Node& right)
+{
+	auto left_distance = left.distance + distanceToGoal(left);
+	auto right_distance = right.distance + distanceToGoal(right);
+
+	return left_distance < right_distance;
 }
