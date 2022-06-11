@@ -208,8 +208,6 @@ const std::string& Database::getGeoJSON(BoundingBox bounds, int zoom)
 
 std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
 {
-	static Routing Router{};
-
 	Railway_station* start{};
 	Railway_station* end{};
 
@@ -228,19 +226,8 @@ std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
 	getNode(start, start_ID);
 	getNode(end, end_ID);
 
-
-	if (Router.route(*start->node, *end->node))
-	{
-		auto milliseconds = Router.getTimePassed();
-		auto secounds = milliseconds / 1000;
-		milliseconds -= secounds * 1000;
-		fmt::print("Time passed on route \"{}\" -> \"{}\": {}s {}ms\n", start->name, end->name, secounds, milliseconds);
-
-		return Router.toGeoJson(start->name, end->name).dump(1);
-	}
-
-	fmt::print("No connection between {} and {}\n", start->name, end->name);
-	return "";
+	auto result = route(*start, *end);
+	return result.dump(1);
 }
 
 void Database::calcMinMaxBoundry(double _minlon, double _minlat, double _maxlon, double _maxlat)
@@ -703,36 +690,39 @@ std::pair<Railnode*, float> Database::nearestRailnode(float lat, float lon)
 	return { min_node, min_distance };
 }
 
+nlohmann::json Database::route(const Railway_station& start, const Railway_station& end, std::string_view log_prefix)
+{
+	Routing Router;
+
+	fmt::print("{} \"{}\" -> \"{}\"\n", log_prefix, start.name, end.name);
+	auto is_route_exist = Router.route(*start.node, *end.node);
+
+	auto milliseconds = Router.getTimePassed();
+	auto secounds = milliseconds / 1000;
+	milliseconds -= secounds * 1000;
+	fmt::print("\tDistance: {}\n", Router.getTimePassed());
+	fmt::print("\tTime passed: {}s {}ms\n", secounds, milliseconds);
+	fmt::print("\tTraveled nodes: {}\n", Router.getTraveledNodes());
+
+	if (is_route_exist)
+		return Router.toGeoJson(start.name, end.name);
+
+	return {};
+}
+
 std::string Database::testRoute()
 {
-	try
-	{
-		Routing Router;
+	static std::random_device dev;
+	//static auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+	static auto seed = 15;
+	static std::mt19937 rng(static_cast<std::mt19937::result_type>(seed));
+	std::uniform_int_distribution<std::size_t> dist(0, railstations.size() - 2);
 
-		static std::random_device dev;
-		static std::mt19937 rng(static_cast<std::mt19937::result_type>(railstations.begin()->first));
-		std::uniform_int_distribution<std::size_t> dist(0, railstations.size() - 2);
+	auto start = std::next(railstations.begin(), dist(rng))->second;
+	auto end = std::next(railstations.begin(), dist(rng))->second;
 
-		auto start = std::next(railstations.begin(), dist(rng))->second;
-		auto end = std::next(railstations.begin(), dist(rng))->second;
-
-		if (!Router.route(*start.node, *end.node))
-		{
-			return {};
-		}
-
-		auto milliseconds = Router.getTimePassed();
-		auto secounds = milliseconds / 1000;
-		milliseconds -= secounds * 1000;
-		fmt::print("Time passed on TEST routing: {}s {}ms\n", secounds, milliseconds);
-
-		return Router.toGeoJson(start.name, end.name).dump(1);
-	}
-	catch (const SQLite::Exception& e)
-	{
-		catchSQLiteException(e, "creating result of finding connection");
-		return {};
-	}
+	auto result = route(start, end, "TEST Route");
+	return result.dump(1);
 }
 
 void catchSQLiteException(const SQLite::Exception& e, std::string_view when, std::string_view dump)

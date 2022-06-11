@@ -43,6 +43,8 @@ private:
 	bool importData_RailwayLine(const nlohmann::json& json_data);
 	bool importData_RailwayStation(const nlohmann::json& json_data);
 	std::pair<Railnode*, float> nearestRailnode(float lat, float lon);
+
+	nlohmann::json route(const Railway_station& start, const Railway_station& end, std::string_view log_prefix = "Route");
 };
 
 void catchSQLiteException(const SQLite::Exception& e, std::string_view when, std::string_view dump = "");
