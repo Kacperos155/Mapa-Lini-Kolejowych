@@ -1,6 +1,7 @@
 #pragma once
 #include "Data Types/Railnode.hpp"
 #include <nlohmann/json.hpp>
+#include <string_view>
 #include "utilities.h"
 
 class Routing
@@ -29,15 +30,17 @@ public:
 
 	bool route(const Railnode& start, const Railnode& end);
 	uint32_t getDistance() const;
+	uint64_t getTimePassed() const;
 
 	[[nodiscard]]
-	nlohmann::json toGeoJson();
+	nlohmann::json toGeoJson(std::string_view start_name = "START_NAME", std::string_view end_name = "END_NAME");
 
 private:
 	SQLite::Database SpatiaLite{ ":memory:" };
-	std::map<int64_t, Node> nodes;
-	Node* start_node;
-	Node* end_node;
+	std::map<int64_t, Node> nodes{};
+	Node* start_node{};
+	Node* end_node{};
+	uint64_t milisecounds_duration{};
 
 	void find_path();
 

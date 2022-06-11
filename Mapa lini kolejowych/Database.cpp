@@ -3,11 +3,9 @@
 #include <fmt/color.h>
 #include <fmt/ranges.h>
 #include <fstream>
-#include <iostream>
 #include <cmath>
-#include <numbers>
-#include <queue>
 #include <chrono>
+#include <random>
 
 #include "GeoJSON_conversion.h"
 #include "Router.h"
@@ -212,14 +210,14 @@ std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
 {
 	static Routing Router{};
 
-	Railnode* start{};
-	Railnode* end{};
+	Railway_station* start{};
+	Railway_station* end{};
 
-	auto getNode = [&](Railnode*& variable, int64_t ID)
+	auto getNode = [&](Railway_station*& variable, int64_t ID)
 	{
 		try
 		{
-			variable = &railnodes.at(ID);
+			variable = &railstations.at(ID);
 		}
 		catch (const std::out_of_range& e)
 		{
@@ -231,11 +229,17 @@ std::string Database::getRoute(int64_t start_ID, int64_t end_ID)
 	getNode(end, end_ID);
 	
 
-	if (Router.route(*start, *end))
+	if (Router.route(*start->node, *end->node))
 	{
-		return Router.toGeoJson().dump(1);
+		auto milliseconds = Router.getTimePassed();
+		auto secounds = milliseconds / 1000;
+		milliseconds -= secounds * 1000;
+		fmt::print("Time passed on route \"{}\" -> \"{}\": {}s {}ms\n", start->name, end->name, secounds, milliseconds);
+
+		return Router.toGeoJson(start->name, end->name).dump(1);
 	}
 
+	fmt::print("No connection between {} and {}\n", start->name, end->name);
 	return "";
 }
 
@@ -553,7 +557,7 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 		if (!segments_number)
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid rail line ({}): Line has no segments \n", rail_line.ID);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway line ({}): Line \"{}\" has no segments \n", rail_line.ID, rail_line.name);
 			return false;
 		}
 
@@ -591,7 +595,7 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 		else
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway line: ID is empty \n");
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station: ID is empty\n");
 			return false;
 		}
 
@@ -603,12 +607,23 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 		else
 		{
 			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Name is empty \n", station.ID);
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Name is empty\n", station.ID);
 			return false;
 		}
 
 		station.lat = json_data["lat"].get<float>();
 		station.lon = json_data["lon"].get<float>();
+
+		auto nearest = nearestRailnode(station.lat, station.lon);
+		if (nearest.second > 0.03f)
+		{
+			insert_statement.reset();
+			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Station \"{}\" is too far from railway {}\n",
+				station.ID, station.name, nearest.second);
+			return false;
+		}
+
+		station.node = nearest.first;
 
 		station.point = fmt::format("POINT({} {})", station.lon, station.lat);
 		insert_statement.bind(":point", station.point);
@@ -650,30 +665,54 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 	}
 }
 
+std::pair<Railnode*, float> Database::nearestRailnode(float lat, float lon)
+{
+	Railnode* min_node{};
+	auto min_distance = std::numeric_limits<float>::max();
+
+	for (auto& [id, node] : railnodes)
+	{
+		auto d_lat = node.lat - lat;
+		auto d_lon = node.lon - lon;
+
+		d_lat *= d_lat;
+		d_lon *= d_lon;
+
+		auto distance = std::sqrt(d_lat + d_lon);
+		if (distance < min_distance)
+		{
+			min_distance = distance;
+			min_node = &node;
+		}
+	}
+
+	return { min_node, min_distance };
+}
+
 std::string Database::testRoute()
 {
 	try
 	{
 		Routing Router;
 
+		static std::random_device dev;
+		static std::mt19937 rng(static_cast<std::mt19937::result_type>(railstations.begin()->first));
+		std::uniform_int_distribution<std::size_t> dist(0, railstations.size() - 2);
 
-		auto time_start = std::chrono::high_resolution_clock::now();
+		auto start = std::next(railstations.begin(), dist(rng))->second;
+		auto end = std::next(railstations.begin(), dist(rng))->second;
 
-		const auto& start = railnodes.at(9227935317);
-		const auto& end = railnodes.at(2895210656);
-
-		if (!Router.route(start, end))
+		if (!Router.route(*start.node, *end.node))
 		{
 			return {};
 		}
 
-		auto time_end = std::chrono::high_resolution_clock::now();
-		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
+		auto milliseconds = Router.getTimePassed();
 		auto secounds = milliseconds / 1000;
 		milliseconds -= secounds * 1000;
 		fmt::print("Time passed on TEST routing: {}s {}ms\n", secounds, milliseconds);
 
-		return Router.toGeoJson().dump(1);
+		return Router.toGeoJson(start.name, end.name).dump(1);
 	}
 	catch (const SQLite::Exception& e)
 	{

@@ -2,11 +2,13 @@
 #include <string>
 #include <string_view>
 
+struct Railnode;
+
 struct Railway_station
 {
 	int64_t ID{};
 	std::string name{};
-	uint64_t node_ID{};
+	Railnode *node{};
 	float lon{};
 	float lat{};
 

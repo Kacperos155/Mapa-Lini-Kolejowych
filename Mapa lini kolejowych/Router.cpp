@@ -4,6 +4,7 @@
 #include <numbers>
 #include <map>
 #include <queue>
+#include <chrono>
 #include "GeoJSON_conversion.h"
 
 
@@ -44,7 +45,10 @@ bool Routing::route(const Railnode& start, const Railnode& end)
 	start_node = &nodes.at(start.ID);
 	end_node = &nodes.at(end.ID);
 
+	auto time_start = std::chrono::high_resolution_clock::now();
 	find_path();
+	auto time_end = std::chrono::high_resolution_clock::now();
+	milisecounds_duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
 
 	if (end_node->distance == std::numeric_limits<double>::max())
 		return false;
@@ -57,7 +61,12 @@ uint32_t Routing::getDistance() const
 	return static_cast<uint32_t>(end_node->distance);
 }
 
-nlohmann::json Routing::toGeoJson()
+uint64_t Routing::getTimePassed() const
+{
+	return milisecounds_duration;
+}
+
+nlohmann::json Routing::toGeoJson(std::string_view start_name, std::string_view end_name)
 {
 	auto json = GeoJSON::createFeature();
 	auto& properties = json["properties"];
@@ -67,8 +76,8 @@ nlohmann::json Routing::toGeoJson()
 
 	properties["distance"] = getDistance();
 
-	properties["start_name"] = "START_NAME";
-	properties["end_name"] = "END_NAME";
+	properties["start_name"] = start_name;
+	properties["end_name"] = end_name;
 
 	return json;
 }
