@@ -24,3 +24,9 @@ std::string utilities::getGeometryBoundry(SQLite::Database& database, std::strin
 	auto boundry_statement = fmt::format("SELECT AsText(Envelope(GeomFromText(\'{}\', 4326)));", spatiaLiteGeometry);
 	return database.execAndGet(boundry_statement).getText();
 }
+
+std::string utilities::asGeoJSON(SQLite::Database& database, std::string_view spatiaLiteGeometry)
+{
+	auto boundry_statement = fmt::format("SELECT AsGeoJSON(GeomFromText(\"{}\", 4326));", spatiaLiteGeometry);
+	return database.execAndGet(boundry_statement).getText();
+}

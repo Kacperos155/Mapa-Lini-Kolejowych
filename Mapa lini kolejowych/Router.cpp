@@ -73,7 +73,9 @@ nlohmann::json Routing::toGeoJson(std::string_view start_name, std::string_view 
 	auto& properties = json["properties"];
 
 	json["geometry"] = createMultiLineString();
-	properties["boundry"] = utilities::getGeometryBoundry(SpatiaLite, json["geometry"].get_ref<std::string&>());
+
+	auto boundry = utilities::getGeometryBoundry(SpatiaLite, json["geometry"].get_ref<std::string&>());
+	properties["bounds"] = nlohmann::json::parse(utilities::asGeoJSON(SpatiaLite, std::move(boundry)));
 
 	properties["distance"] = getDistance();
 
