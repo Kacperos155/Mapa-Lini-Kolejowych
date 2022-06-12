@@ -93,10 +93,10 @@ nlohmann::json Routing::toGeoJson(std::string_view start_name, std::string_view 
 
 void Routing::find_path()
 {
-	Heuristic heuristic;
+	/*Heuristic heuristic{};
 	heuristic.goal = start_node;
 
-	//std::priority_queue<Node*, std::vector<Node*>, Heuristic> queue(heuristic);
+	std::priority_queue<Node*, std::vector<Node*>, Heuristic> queue(heuristic);*/
 	std::priority_queue<Node*> queue;
 
 	const auto& end_distance = end_node->distance;

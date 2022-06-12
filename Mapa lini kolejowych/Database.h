@@ -24,7 +24,7 @@ public:
 	const std::string& getGeoJSON(BoundingBox bounds, int zoom = 20);
 	std::string getRoute(int64_t start_ID, int64_t end_ID);
 
-	std::string testRoute();
+	std::string testRoute(int seed = 0);
 
 private:
 	std::string timestamp;
@@ -44,7 +44,7 @@ private:
 	bool importData_RailwayStation(const nlohmann::json& json_data);
 	std::pair<Railnode*, float> nearestRailnode(float lat, float lon);
 
-	nlohmann::json route(const Railway_station& start, const Railway_station& end, std::string_view log_prefix = "Route");
+	nlohmann::json route(const Railway_station& start, const Railway_station& end, std::string_view log_prefix = "Route") const;
 };
 
 void catchSQLiteException(const SQLite::Exception& e, std::string_view when, std::string_view dump = "");

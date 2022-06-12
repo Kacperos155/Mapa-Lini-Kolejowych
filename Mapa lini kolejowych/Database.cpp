@@ -614,16 +614,16 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 		station.lat = json_data["lat"].get<float>();
 		station.lon = json_data["lon"].get<float>();
 
-		auto nearest = nearestRailnode(station.lat, station.lon);
-		if (nearest.second > 0.03f)
+		auto [nearest, distance_to_node] = nearestRailnode(station.lat, station.lon);
+		if (distance_to_node > 0.03f)
 		{
 			insert_statement.reset();
 			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway station ({}): Station \"{}\" is too far from railway {}\n",
-				station.ID, station.name, nearest.second);
+				station.ID, station.name, distance_to_node);
 			return false;
 		}
 
-		station.node = nearest.first;
+		station.node = nearest;
 
 		station.point = fmt::format("POINT({} {})", station.lon, station.lat);
 		insert_statement.bind(":point", station.point);
@@ -690,7 +690,7 @@ std::pair<Railnode*, float> Database::nearestRailnode(float lat, float lon)
 	return { min_node, min_distance };
 }
 
-nlohmann::json Database::route(const Railway_station& start, const Railway_station& end, std::string_view log_prefix)
+nlohmann::json Database::route(const Railway_station& start, const Railway_station& end, std::string_view log_prefix) const
 {
 	Routing Router;
 
@@ -700,7 +700,7 @@ nlohmann::json Database::route(const Railway_station& start, const Railway_stati
 	auto milliseconds = Router.getTimePassed();
 	auto secounds = milliseconds / 1000;
 	milliseconds -= secounds * 1000;
-	fmt::print("\tDistance: {}\n", Router.getTimePassed());
+	fmt::print("\tDistance: {}\n", Router.getDistance());
 	fmt::print("\tTime passed: {}s {}ms\n", secounds, milliseconds);
 	fmt::print("\tTraveled nodes: {}\n", Router.getTraveledNodes());
 
@@ -710,12 +710,11 @@ nlohmann::json Database::route(const Railway_station& start, const Railway_stati
 	return {};
 }
 
-std::string Database::testRoute()
+std::string Database::testRoute(int seed)
 {
+	auto time_seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 	static std::random_device dev;
-	//static auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-	static auto seed = 15;
-	static std::mt19937 rng(static_cast<std::mt19937::result_type>(seed));
+	static std::mt19937 rng(static_cast<std::mt19937::result_type>((seed != 0) ? seed : time_seed));
 	std::uniform_int_distribution<std::size_t> dist(0, railstations.size() - 2);
 
 	auto start = std::next(railstations.begin(), dist(rng))->second;
