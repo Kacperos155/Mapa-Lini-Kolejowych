@@ -32,7 +32,6 @@ function addLegendSpeedLimit(label, color) {
 }
 
 {
-	let lastSpeedLimit = {};
 	let label_prefix = "Speed limit" + ": ";
 	for (let i = 0; i < (speedLimits.length - 1); ++i) {
 		let label = label_prefix + speedLimits[i].min_speed + " - " + (speedLimits[i + 1].min_speed - 1) + " km/h";
@@ -57,6 +56,12 @@ const Legend_Markers_Lines = Legend_markers.concat([
 		type: "polyline",
 		weight: 5,
 		color: defaultLineColor
+	},
+	{
+		label: "Electrified line",
+		type: "polyline",
+		weight: 5,
+		color: electrifiedLineColor
 	},
 	{
 		label: "Disused rail",

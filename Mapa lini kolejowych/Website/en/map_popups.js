@@ -7,9 +7,9 @@ function popUps(feature, layer) {
 			text += "Line: <strong>" + feature.properties.number + '</strong><br>';
 		if (feature.properties.max_speed)
 			text += "Max speed: <strong>" + feature.properties.max_speed + ' </strong>km/h<br>';
-		if (feature.properties.voltage)
-			if (feature.properties.voltage > 0)
-				text += "Voltage: <strong>" + feature.properties.voltage + ' </strong>V<br>';
+		if (feature.properties.electrified)
+			if (feature.properties.electrified == true)
+				text += "Line is electrified<br>";
 	}
 	else if (feature.geometry.type == "MultiLineString") {
 		type = "relation";
