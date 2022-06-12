@@ -1,9 +1,13 @@
 {
- "lang_tag": "en-GB",
- "name": "Name",
- "no_result": "No results",
- "rail_lines": "Rail Lines",
- "rail_stations": "Rail Stations",
- "search": "Search",
- "title": "Interactive Rail Lines Map of Poland"
+  "lang_tag": "en-GB",
+  "calculate": "Calculate",
+  "distance": "Distance",
+  "from": "From",
+  "name": "Name",
+  "no_result": "No results",
+  "rail_lines": "Rail Lines",
+  "rail_stations": "Rail Stations",
+  "search": "Search",
+  "title": "Interactive Rail Lines Map of Poland",
+  "to": "To"
 }
