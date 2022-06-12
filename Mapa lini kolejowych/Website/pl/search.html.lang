@@ -1,9 +1,13 @@
 {
- "lang_tag": "pl-PL",
- "name": "Nazwa",
- "no_result": "Brak wyników",
- "rail_lines": "Linie kolejowe",
- "rail_stations": "Stacje",
- "search": "Szukaj",
- "title": "Interaktywna Mapa Lini Kolejowych w Polsce"
+  "lang_tag": "pl-PL",
+  "calculate": "Oblicz",
+  "distance": "Dystans",
+  "from": "Z",
+  "name": "Nazwa",
+  "no_result": "Brak wyników",
+  "rail_lines": "Linie kolejowe",
+  "rail_stations": "Stacje",
+  "search": "Szukaj",
+  "title": "Interaktywna Mapa Lini Kolejowych w Polsce",
+  "to": "Do"
 }
