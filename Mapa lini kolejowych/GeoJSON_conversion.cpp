@@ -50,7 +50,7 @@ nlohmann::json GeoJSON::getSegment(SQLite::Statement& sql_statement)
 		properties["max_speed"] = column.getText();
 
 	if (auto column = sql_statement.getColumn("Electrified"); !column.isNull())
-		properties["voltage"] = column.getText();
+		properties["electrified"] = column.getText();
 	
 	if (auto column = sql_statement.getColumn("Disusage"); !column.isNull())
 		properties["disusage"] = column.getText();
