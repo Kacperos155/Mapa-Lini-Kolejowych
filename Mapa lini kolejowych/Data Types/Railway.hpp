@@ -32,7 +32,7 @@ struct Railway
 DROP TABLE IF EXISTS "Railways";
 CREATE TABLE "Railways" (
 	"ID" TEXT PRIMARY KEY,
-	"Line name" TEXT NOT NULL,
+	"Line name" TEXT,
 	"Usage" TEXT,
 	"Max speed" INTEGER,
 	"Disusage" INTEGER,

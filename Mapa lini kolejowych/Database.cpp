@@ -435,12 +435,6 @@ bool Database::importData_Railway(const nlohmann::json& json_data)
 		{
 			railway.line_name = *line_name;
 		}
-		else
-		{
-			insert_statement.reset();
-			fmt::print(fmt::fg(fmt::color::orange_red), "Invalid railway ({}): Line number is empty \n", railway.ID);
-			return false;
-		}
 
 		if (auto usage = bindTag<std::string>(insert_statement, ":usage", tags, "usage"); usage != nullptr)
 		{
