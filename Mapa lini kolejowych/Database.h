@@ -33,7 +33,6 @@ private:
 	std::map<std::string_view, SQLite::Statement> sql_statements;
 	std::map<uint64_t, Railnode> railnodes;
 	std::map<uint64_t, Railway> railways;
-	std::map<uint64_t, Railway_line> raillines;
 	std::map<uint64_t, Railway_station> railstations;
 
 	void calcMinMaxBoundry(double _minlon, double _minlat, double _maxlon, double _maxlat);
@@ -42,6 +41,9 @@ private:
 	bool importData_Railway(const nlohmann::json& json_data);
 	bool importData_RailwayLine(const nlohmann::json& json_data);
 	bool importData_RailwayStation(const nlohmann::json& json_data);
+
+	static std::string getRailnodesConnectionsColumns(uint8_t max_connections, bool table_create = false);
+	void insertRailnodes(uint8_t max_connections);
 	std::pair<Railnode*, float> nearestRailnode(float lat, float lon);
 
 	nlohmann::json route(const Railway_station& start, const Railway_station& end, std::string_view log_prefix = "Route") const;

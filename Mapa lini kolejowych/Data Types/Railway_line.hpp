@@ -25,7 +25,7 @@ struct Railway_line
 		R"(
 DROP TABLE IF EXISTS "Railway stations";
 CREATE TABLE "Railway lines" (
-	"ID" INT PRIMARY KEY,
+	"ID" TEXT PRIMARY KEY,
 	"Number" TEXT NOT NULL,
 	"Color" TEXT NOT NULL,
 	"Name" TEXT,

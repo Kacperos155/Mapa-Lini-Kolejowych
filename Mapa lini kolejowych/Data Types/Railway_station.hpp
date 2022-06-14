@@ -30,6 +30,7 @@ struct Railway_station
 DROP TABLE IF EXISTS "Railway stations";
 CREATE TABLE "Railway stations" (
 	"ID" TEXT PRIMARY KEY,
+	"Railnode ID" TEXT NOT NULL,
 	"Name" TEXT NOT NULL,
 	"Type" INT NOT NULL
 );
@@ -38,8 +39,15 @@ SELECT AddGeometryColumn('Railway stations', 'Point', 4326, 'POINT', 2, 1);
 
 	static constexpr std::string_view sql_insert =
 		R"(
-INSERT INTO "Railway stations" ("ID", "Name", "Type", "Point")
-	VALUES (:id, :name, :type, GeomFromText(:point, 4326));
+INSERT INTO "Railway stations" ("ID", "Railnode ID", "Name", "Type", "Point")
+	VALUES (:id, :node, :name, :type, MakePoint(:lon, :lat, 4326));
+)";
+
+	static constexpr std::string_view sql_get_all =
+		R"(
+SELECT "ID", "Railnode ID", "Name", "Type", X(Point) as Lon, Y(Point) as Lat
+	FROM "Railway stations"
+	WHERE ID = ?;
 )";
 
 	static constexpr std::string_view sql_get =

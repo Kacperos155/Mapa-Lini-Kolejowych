@@ -13,30 +13,29 @@ struct Railnode
 
 	Railnode()
 	{
-		neighbours.reserve(4);
+		neighbours.reserve(6);
 	}
 
 	static constexpr std::string_view sql_table_name = "Railnodes";
-	static constexpr std::string_view sql_create =
+	static constexpr std::string_view sql_create_fmt =
 		R"(
 DROP TABLE IF EXISTS "Railnodes";
 CREATE TABLE "Railnodes" (
-	"ID" INT PRIMARY KEY,
-	"Ref Counter" INT NOT NULL
+	"ID" TEXT PRIMARY KEY,
+	{}
 );
 SELECT AddGeometryColumn('Railnodes', 'Point', 4326, 'POINT', 2, 1);
 )";
 
-	static constexpr std::string_view sql_insert =
+	static constexpr std::string_view sql_insert_fmt =
 		R"(
-INSERT INTO "Railnodes" ("ID", "Ref Counter", "Point")
-	VALUES (:id, :ref_counter, GeomFromText(:point, 4326));
+INSERT INTO "Railnodes" ("ID", {}, "Point")
+	VALUES (:id, {}, MakePoint(:lon, :lat, 4326));
 )";
 
-	static constexpr std::string_view sql_get =
+	static constexpr std::string_view sql_get_all_fmt =
 		R"(
-SELECT "Ref Counter", "Point"
+SELECT "ID", {}, X(Point) as Lon, Y(Point) as Lat
 	FROM "Railnodes"
-	WHERE ID = ?;
 )";
 };

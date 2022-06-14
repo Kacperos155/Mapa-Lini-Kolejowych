@@ -52,9 +52,16 @@ void Database::showInfo()
 		fmt::print(fmt::fg(fmt::color::alice_blue), "\t\t With {} connections: {}\n", connections, counter);
 	}
 
-	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway::sql_table_name, railways.size());
-	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_line::sql_table_name, raillines.size());
 	fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", Railway_station::sql_table_name, railstations.size());
+
+	auto countAndShow = [&](std::string_view table_name)
+	{
+		fmt::print(fmt::fg(fmt::color::aqua), "\t {}: {}\n", table_name,
+			database.execAndGet(fmt::format("SELECT COUNT(*) FROM \"{}\";", table_name)).getText());
+	};
+
+	countAndShow(Railway::sql_table_name);
+	countAndShow(Railway_line::sql_table_name);
 
 	fmt::print("\t Min Lat: {:.2f}, Min Lon: {:.2f}\n", max_bounding.min_lat, max_bounding.min_lon);
 	fmt::print("\t Max Lat: {:.2f}, Max Lon: {:.2f}\n", max_bounding.max_lat, max_bounding.max_lon);
@@ -91,6 +98,9 @@ void Database::loadFromFile(const std::filesystem::path& database_path)
 	try
 	{
 		database.loadExtension("mod_spatialite.dll", nullptr);
+
+		//std::vector<std::pair<
+
 	}
 	catch (const SQLite::Exception& e)
 	{
@@ -249,7 +259,6 @@ bool Database::importData(const nlohmann::json& json_data)
 	try
 	{
 		database.exec(sql_init_spatialite.data());
-		database.exec(Railnode::sql_create.data());
 		database.exec(Railway::sql_create.data());
 		database.exec(Railway_line::sql_create.data());
 		database.exec(Railway_station::sql_create.data());
@@ -294,6 +303,17 @@ bool Database::importData(const nlohmann::json& json_data)
 				++invalid;
 		}
 	}
+	fmt::print("Inserting railnodes to database... ");
+
+	uint8_t max_connections = 0;
+	for (const auto& [ID, node] : railnodes)
+	{
+		auto connections = static_cast<uint8_t>(node.neighbours.size());
+		if (max_connections < connections)
+			max_connections = connections;
+	}
+	insertRailnodes(max_connections);
+	fmt::print("Done\n");
 
 	try
 	{
@@ -311,6 +331,8 @@ bool Database::importData(const nlohmann::json& json_data)
 		insert_info("minlat", max_bounding.min_lat);
 		insert_info("maxlon", max_bounding.max_lon);
 		insert_info("maxlat", max_bounding.max_lat);
+		insert_info("maxNodeConnections", max_connections);
+			
 	}
 	catch (const SQLite::Exception& e)
 	{
@@ -544,13 +566,13 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 				continue;
 
 			auto id = segment["ref"].get<int64_t>();
-			if (!railways.contains(id))
+			auto it = railways.find(id);
+			if (it == railways.end())
 				continue;
 
 			++segments_number;
-			const auto& railway = railways.at(id);
 
-			std::string_view line_segment = railway.line;
+			std::string_view line_segment = it->second.line;
 			line_segment.remove_prefix(10);
 			rail_line.line += fmt::format("{}, ", line_segment);
 		}
@@ -571,7 +593,6 @@ bool Database::importData_RailwayLine(const nlohmann::json& json_data)
 		insert_statement.exec();
 		insert_statement.reset();
 
-		raillines.try_emplace(rail_line.ID, std::move(rail_line));
 		return true;
 	}
 	catch (const SQLite::Exception& e)
@@ -624,9 +645,10 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 		}
 
 		station.node = nearest;
+		insert_statement.bind(":node", station.node->ID);
 
-		station.point = fmt::format("POINT({} {})", station.lon, station.lat);
-		insert_statement.bind(":point", station.point);
+		insert_statement.bind(":lon", station.lon);
+		insert_statement.bind(":lat", station.lat);
 
 		station.type = Railway_station::Type::Invalid;
 		if (tags.contains("railway"))
@@ -662,6 +684,70 @@ bool Database::importData_RailwayStation(const nlohmann::json& json_data)
 	{
 		catchSQLiteException(e, "creating railway station");
 		return false;
+	}
+}
+
+std::string Database::getRailnodesConnectionsColumns(uint8_t max_connections, bool table_create)
+{
+	std::string connections;
+	for (int i = 1; i <= max_connections; ++i)
+	{
+		connections += fmt::format("\"Connection_{}\"", i);
+		if (table_create)
+			connections += "TEXT NULL";
+		connections += ", ";
+	}
+	connections.pop_back();
+	connections.pop_back();
+
+	return connections;
+}
+
+void Database::insertRailnodes(uint8_t max_connections)
+{
+	try
+	{
+		database.exec(fmt::format(fmt::runtime(Railnode::sql_create_fmt), getRailnodesConnectionsColumns(max_connections, true)));
+
+		std::vector<std::string> connection_binds;
+		connection_binds.resize(max_connections);
+		std::string insert_sql{};
+
+		for (int i = 0; i < max_connections; ++i)
+		{
+			connection_binds[i] = fmt::format(":connection_{}", i + 1);
+			insert_sql += fmt::format("{}, ", connection_binds[i]);
+		}
+		insert_sql.pop_back();
+		insert_sql.pop_back();
+		
+		insert_sql = fmt::format(fmt::runtime(Railnode::sql_insert_fmt), getRailnodesConnectionsColumns(max_connections), insert_sql);
+		auto insert_statement = SQLite::Statement(database, insert_sql);
+
+		for (const auto& [ID, node] : railnodes)
+		{
+			insert_statement.bind(":id", static_cast<int64_t>(ID));
+			int i = 0;
+			for (; i < node.neighbours.size(); ++i)
+			{
+				insert_statement.bind(connection_binds[i], node.neighbours[i]->ID);
+			}
+			for (; i < max_connections; ++i)
+			{
+				insert_statement.bind(connection_binds[i]);
+			}
+
+			insert_statement.bind(":lon", node.lon);
+			insert_statement.bind(":lat", node.lat);
+
+			insert_statement.exec();
+			insert_statement.reset();
+		}
+	}
+	catch (const SQLite::Exception& e)
+	{
+		catchSQLiteException(e, "inserting railnodes");
+		return;
 	}
 }
 
