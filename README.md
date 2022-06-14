@@ -4,15 +4,16 @@ Client-Server application using [Leaflet](https://leafletjs.com/)
 to visualize rail data downloaded from [OpenStreetMap](https://www.openstreetmap.org/) servers.
 Application in Polish and English languages.
 
-![screenshot](https://raw.githubusercontent.com/Kacperos155/Mapa-Lini-Kolejowych/master/2022-01-23.png)
+![screenshot](https://raw.githubusercontent.com/Kacperos155/Mapa-Lini-Kolejowych/master/2022-06-14.png)
 
 ## Using and Building
 ### Using
-Ready to work version with rail data for Poland is ready to download in Realeases.
+Ready to work version with rail data for Poland is ready to download in Releases.
 Executable will host website on localhost:80
 
 ### Flags  
 Executable .exe file support this flags:
+- "--help" - Shows below flags with desciption
 - "--rebuild-database" - Creating new database by downloading data for provided country from OverSteetMap by [OverpassAPI](http://overpass-api.de/)
  or by providing JSON file with data compatible with OverpassAPI [script](https://github.com/Kacperos155/Mapa-Lini-Kolejowych/blob/master/Mapa%20lini%20kolejowych/Overpass%20data/Overpass%20query.ql)
 - "--force-console" - Turning off GUI and forcing interaction by console
