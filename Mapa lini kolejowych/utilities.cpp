@@ -30,3 +30,8 @@ std::string utilities::asGeoJSON(SQLite::Database& database, std::string_view sp
 	auto boundry_statement = fmt::format("SELECT AsGeoJSON(GeomFromText(\"{}\", 4326));", spatiaLiteGeometry);
 	return database.execAndGet(boundry_statement).getText();
 }
+
+uint64_t utilities::countDatabaseRows(SQLite::Database& database, std::string_view table_name)
+{
+	return std::stoull(database.execAndGet(fmt::format("SELECT COUNT(*) FROM \"{}\";", table_name)).getText());
+}

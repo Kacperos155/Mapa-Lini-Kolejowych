@@ -47,7 +47,6 @@ INSERT INTO "Railway stations" ("ID", "Railnode ID", "Name", "Type", "Point")
 		R"(
 SELECT "ID", "Railnode ID", "Name", "Type", X(Point) as Lon, Y(Point) as Lat
 	FROM "Railway stations"
-	WHERE ID = ?;
 )";
 
 	static constexpr std::string_view sql_get =
