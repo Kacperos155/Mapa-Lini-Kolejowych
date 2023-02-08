@@ -114,7 +114,7 @@
       <Filter>Website</Filter>
     </None>
     <None Include="..\README.md" />
-    <None Include="Overpass data\Overpass query.ql">
+    <None Include="Overpass data\Overpass query.overpassql">
       <Filter>Overpass Data</Filter>
     </None>
     <None Include="Overpass data\test.json">

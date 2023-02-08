@@ -15,7 +15,7 @@ Executable will host website on localhost:80
 Executable .exe file support this flags:
 - "--help" - Shows below flags with desciption
 - "--rebuild-database" - Creating new database by downloading data for provided country from OverSteetMap by [OverpassAPI](http://overpass-api.de/)
- or by providing JSON file with data compatible with OverpassAPI [script](https://github.com/Kacperos155/Mapa-Lini-Kolejowych/blob/master/Mapa%20lini%20kolejowych/Overpass%20data/Overpass%20query.ql)
+ or by providing JSON file with data compatible with OverpassAPI [script](https://github.com/Kacperos155/Mapa-Lini-Kolejowych/blob/master/Mapa%20lini%20kolejowych/Overpass%20data/Overpass%20query.overpassql)
 - "--force-console" - Turning off GUI and forcing interaction by console
 - "--translate" - Translating files mentioned in [Website\languages.json](https://github.com/Kacperos155/Mapa-Lini-Kolejowych/blob/master/Mapa%20lini%20kolejowych/Website/languages.json)
 

@@ -1,5 +1,5 @@
 #include "resources.h"
-#include "Overpass data/Overpass query.ql"
+#include "Overpass data/Overpass query.overpassql"
 #include <vector>
 #include <array>
 #include <string_view>
