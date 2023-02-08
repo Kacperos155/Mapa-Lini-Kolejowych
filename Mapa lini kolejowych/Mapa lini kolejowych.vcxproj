@@ -196,7 +196,6 @@
   <ItemGroup>
     <None Include="..\README.md" />
     <None Include="Overpass data\Overpass query.overpassql" />
-    <None Include="Overpass data\test.json" />
     <None Include="SQL\GeoJSON.sql" />
     <None Include="Website\Cookies.js" />
     <None Include="Website\green.css" />

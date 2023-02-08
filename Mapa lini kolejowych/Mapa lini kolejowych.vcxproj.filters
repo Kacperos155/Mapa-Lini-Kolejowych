@@ -117,9 +117,6 @@
     <None Include="Overpass data\Overpass query.overpassql">
       <Filter>Overpass Data</Filter>
     </None>
-    <None Include="Overpass data\test.json">
-      <Filter>Overpass Data</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">
